@@ -10,30 +10,29 @@
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_DP_Cfg_sort_order {
-    var $default = '0';
-    var $title;
-    var $description;
-    var $app_configured = false;
+  class PayPal_DP_Cfg_sort_order {
 
-    function __construct() {
-      global $OSCOM_PayPal;
+    public $default = '0';
+    public $title;
+    public $description;
+    public $app_configured = false;
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_dp_sort_order_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_dp_sort_order_desc');
+    public function __construct() {
+      global $PayPal;
+
+      $this->title = $PayPal->getDef('cfg_dp_sort_order_title');
+      $this->description = $PayPal->getDef('cfg_dp_sort_order_desc');
     }
 
-    function getSetField() {
-      $input = tep_draw_input_field('sort_order', OSCOM_APP_PAYPAL_DP_SORT_ORDER, 'id="inputDpSortOrder"');
+    public function getSetField() {
+      $input = new Input('sort_order', ['value' => PAYPAL_APP_DP_SORT_ORDER, 'id' => 'inputDpSortOrder']);
 
-      $result = <<<EOT
+      return <<<"EOHTML"
 <h5>{$this->title}</h5>
 <p>{$this->description}</p>
 
-<div class="mb-3">{$input}</div> 
-EOT;
-
-      return $result;
+<div class="mb-3">{$input}</div>
+EOHTML;
     }
+
   }
-?>

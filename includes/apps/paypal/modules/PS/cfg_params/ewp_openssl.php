@@ -10,30 +10,29 @@
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_PS_Cfg_ewp_openssl {
-    var $default = '/usr/bin/openssl';
-    var $title;
-    var $description;
-    var $sort_order = 1300;
+  class PayPal_PS_Cfg_ewp_openssl {
 
-    function __construct() {
-      global $OSCOM_PayPal;
+    public $default = '/usr/bin/openssl';
+    public $title;
+    public $description;
+    public $sort_order = 1300;
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_ps_ewp_openssl_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_ps_ewp_openssl_desc');
+    public function __construct() {
+      global $PayPal;
+
+      $this->title = $PayPal->getDef('cfg_ps_ewp_openssl_title');
+      $this->description = $PayPal->getDef('cfg_ps_ewp_openssl_desc');
     }
 
-    function getSetField() {
-      $input = tep_draw_input_field('ewp_openssl', OSCOM_APP_PAYPAL_PS_EWP_OPENSSL, 'id="inputPsEwpOpenSsl"');
+    public function getSetField() {
+      $input = new Input('ewp_openssl', ['value' => PAYPAL_APP_PS_EWP_OPENSSL, 'id' => 'inputPsEwpOpenSsl"']);
 
-      $result = <<<EOT
+      return <<<"EOHTML"
 <h5>{$this->title}</h5>
 <p>{$this->description}</p>
 
 <div class="mb-3">{$input}</div>
-EOT;
-
-      return $result;
+EOHTML;
     }
+
   }
-?>

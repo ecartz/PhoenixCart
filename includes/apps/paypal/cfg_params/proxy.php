@@ -10,30 +10,29 @@
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_Cfg_proxy {
-    var $default = '';
-    var $title;
-    var $description;
-    var $sort_order = 400;
+  class PayPal_Cfg_proxy {
 
-    function __construct() {
-      global $OSCOM_PayPal;
+    public $default = '';
+    public $title;
+    public $description;
+    public $sort_order = 400;
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_proxy_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_proxy_desc');
+    public function __construct() {
+      global $PayPal;
+
+      $this->title = $PayPal->getDef('cfg_proxy_title');
+      $this->description = $PayPal->getDef('cfg_proxy_desc');
     }
 
-    function getSetField() {
-      $input = tep_draw_input_field('proxy', OSCOM_APP_PAYPAL_PROXY, 'id="inputProxy"');
+    public function getSetField() {
+      $input = new Input('proxy', ['value' => PAYPAL_APP_PROXY, 'id' => 'inputProxy']);
 
-      $result = <<<EOT
+      return <<<"EOHTML"
 <h5>{$this->title}</h5>
 <p>{$this->description}  </p>
 
 <div>{$input}</div>
-EOT;
-
-      return $result;
+EOHTML;
     }
+
   }
-?>

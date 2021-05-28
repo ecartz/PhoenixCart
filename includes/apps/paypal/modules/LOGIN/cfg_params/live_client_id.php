@@ -10,30 +10,29 @@
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_LOGIN_Cfg_live_client_id {
-    var $default = '';
-    var $title;
-    var $description;
-    var $sort_order = 200;
+  class PayPal_LOGIN_Cfg_live_client_id {
 
-    function __construct() {
-      global $OSCOM_PayPal;
+    public $default = '';
+    public $title;
+    public $description;
+    public $sort_order = 200;
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_login_live_client_id_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_login_live_client_id_desc');
+    public function __construct() {
+      global $PayPal;
+
+      $this->title = $PayPal->getDef('cfg_login_live_client_id_title');
+      $this->description = $PayPal->getDef('cfg_login_live_client_id_desc');
     }
 
-    function getSetField() {
-      $input = tep_draw_input_field('live_client_id', OSCOM_APP_PAYPAL_LOGIN_LIVE_CLIENT_ID, 'id="inputLogInLiveClientId"');
+    public function getSetField() {
+      $input = new Input('live_client_id', ['value' => PAYPAL_APP_LOGIN_LIVE_CLIENT_ID, 'id' => 'inputLogInLiveClientId']);
 
-      $result = <<<EOT
+      return <<<"EOHTML"
 <h5>{$this->title}</h5>
 <p>{$this->description}</p>
 
 <div class="mb-3">{$input}</div>
-EOT;
-
-      return $result;
+EOHTML;
     }
+
   }
-?>

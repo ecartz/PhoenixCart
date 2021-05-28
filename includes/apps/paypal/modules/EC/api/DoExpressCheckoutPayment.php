@@ -10,43 +10,44 @@
   Released under the GNU General Public License
 */
 
-  function OSCOM_PayPal_EC_Api_DoExpressCheckoutPayment($OSCOM_PayPal, $server, $extra_params) {
+  function PayPal_EC_Api_DoExpressCheckoutPayment($PayPal, $server, $extra_params) {
     if ( $server == 'live' ) {
       $api_url = 'https://api-3t.paypal.com/nvp';
     } else {
       $api_url = 'https://api-3t.sandbox.paypal.com/nvp';
     }
 
-    $params = array('VERSION' => $OSCOM_PayPal->getApiVersion(),
-                    'METHOD' => 'DoExpressCheckoutPayment',
-                    'PAYMENTREQUEST_0_PAYMENTACTION' => ((OSCOM_APP_PAYPAL_EC_TRANSACTION_METHOD == '1') || !$OSCOM_PayPal->hasCredentials('EC') ? 'Sale' : 'Authorization'),
-                    'BUTTONSOURCE' => $OSCOM_PayPal->getIdentifier());
+    $params = [
+      'VERSION' => $PayPal->getApiVersion(),
+      'METHOD' => 'DoExpressCheckoutPayment',
+      'PAYMENTREQUEST_0_PAYMENTACTION' => ((PAYPAL_APP_EC_TRANSACTION_METHOD == '1') || !$PayPal->hasCredentials('EC') ? 'Sale' : 'Authorization'),
+      'BUTTONSOURCE' => $PayPal->getIdentifier(),
+    ];
 
-    if ( $OSCOM_PayPal->hasCredentials('EC') ) {
-      $params['USER'] = $OSCOM_PayPal->getCredentials('EC', 'username');
-      $params['PWD'] = $OSCOM_PayPal->getCredentials('EC', 'password');
-      $params['SIGNATURE'] = $OSCOM_PayPal->getCredentials('EC', 'signature');
+    if ( $PayPal->hasCredentials('EC') ) {
+      $params['USER'] = $PayPal->getCredentials('EC', 'username');
+      $params['PWD'] = $PayPal->getCredentials('EC', 'password');
+      $params['SIGNATURE'] = $PayPal->getCredentials('EC', 'signature');
     } else {
-      $params['SUBJECT'] = $OSCOM_PayPal->getCredentials('EC', 'email');
+      $params['SUBJECT'] = $PayPal->getCredentials('EC', 'email');
     }
 
-    if ( is_array($extra_params) && !empty($extra_params) ) {
+    if ( is_array($extra_params) && $extra_params ) {
       $params = array_merge($params, $extra_params);
     }
 
     $post_string = '';
-
     foreach ( $params as $key => $value ) {
       $post_string .= $key . '=' . urlencode(utf8_encode(trim($value))) . '&';
     }
 
     $post_string = substr($post_string, 0, -1);
 
-    $response = $OSCOM_PayPal->makeApiCall($api_url, $post_string);
-    parse_str($response, $response_array);
+    parse_str($PayPal->makeApiCall($api_url, $post_string), $response);
 
-    return array('res' => $response_array,
-                 'success' => in_array($response_array['ACK'], array('Success', 'SuccessWithWarning')),
-                 'req' => $params);
+    return [
+      'res' => $response,
+      'success' => in_array($response['ACK'], ['Success', 'SuccessWithWarning']),
+      'req' => $params,
+    ];
   }
-?>

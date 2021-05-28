@@ -10,40 +10,38 @@
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_EC_Cfg_instant_update {
-    var $default = '1';
-    var $title;
-    var $description;
-    var $sort_order = 400;
+  class PayPal_EC_Cfg_instant_update {
 
-    function __construct() {
-      global $OSCOM_PayPal;
+    public $default = '1';
+    public $title;
+    public $description;
+    public $sort_order = 400;
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_ec_instant_update_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_ec_instant_update_desc');
+    public function __construct() {
+      global $PayPal;
+
+      $this->title = $PayPal->getDef('cfg_ec_instant_update_title');
+      $this->description = $PayPal->getDef('cfg_ec_instant_update_desc');
     }
 
-    function getSetField() {
-      global $OSCOM_PayPal;
+    public function getSetField() {
+      global $PayPal;
 
-      $input = null;
-      $input .= '<div class="custom-control custom-radio custom-control-inline">';
-        $input .= '<input type="radio" class="custom-control-input" id="instantUpdateSelectionEnabled" name="instant_update" value="1"' . (OSCOM_APP_PAYPAL_EC_INSTANT_UPDATE == '1' ? ' checked="checked"' : '') . '>';
-        $input .= '<label class="custom-control-label" for="instantUpdateSelectionEnabled">' . $OSCOM_PayPal->getDef('cfg_ec_instant_update_enabled') . '</label>';
+      $input  = '<div class="custom-control custom-radio custom-control-inline">';
+        $input .= '<input type="radio" class="custom-control-input" id="instantUpdateSelectionEnabled" name="instant_update" value="1"' . (PAYPAL_APP_EC_INSTANT_UPDATE == '1' ? ' checked="checked"' : '') . '>';
+        $input .= '<label class="custom-control-label" for="instantUpdateSelectionEnabled">' . $PayPal->getDef('cfg_ec_instant_update_enabled') . '</label>';
       $input .= '</div>';
       $input .= '<div class="custom-control custom-radio custom-control-inline">';
-        $input .= '<input type="radio" class="custom-control-input" id="instantUpdateSelectionDisabled" name="instant_update" value="0"' . (OSCOM_APP_PAYPAL_EC_INSTANT_UPDATE == '0' ? ' checked="checked"' : '') . '>';
-        $input .= '<label class="custom-control-label" for="instantUpdateSelectionDisabled">' . $OSCOM_PayPal->getDef('cfg_ec_instant_update_disabled') . '</label>';
+        $input .= '<input type="radio" class="custom-control-input" id="instantUpdateSelectionDisabled" name="instant_update" value="0"' . (PAYPAL_APP_EC_INSTANT_UPDATE == '0' ? ' checked="checked"' : '') . '>';
+        $input .= '<label class="custom-control-label" for="instantUpdateSelectionDisabled">' . $PayPal->getDef('cfg_ec_instant_update_disabled') . '</label>';
       $input .= '</div>';
 
-      $result = <<<EOT
+      return <<<"EOHTML"
 <h5>{$this->title}</h5>
 <p>{$this->description}</p>
 
 <div class="mb-3" id="instantUpdateSelection">{$input}</div>
-EOT;
-
-      return $result;
+EOHTML;
     }
+
   }
-?>

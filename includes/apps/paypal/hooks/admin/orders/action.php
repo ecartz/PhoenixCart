@@ -10,32 +10,36 @@
   Released under the GNU General Public License
 */
 
-  if ( !class_exists('OSCOM_PayPal') ) {
-    include DIR_FS_CATALOG . 'includes/apps/paypal/OSCOM_PayPal.php';
+  if ( !class_exists('PayPal') ) {
+    include DIR_FS_CATALOG . 'includes/apps/paypal/PayPal.php';
   }
 
   class paypal_hook_admin_orders_action {
 
-    function __construct() {
-      global $OSCOM_PayPal;
+    public function __construct() {
+      global $PayPal;
 
-      if ( !(($OSCOM_PayPal ?? null) instanceof OSCOM_PayPal) ) {
-        $OSCOM_PayPal = new OSCOM_PayPal();
+      if ( !(($PayPal ?? null) instanceof PayPal) ) {
+        $PayPal = new PayPal();
       }
 
-      $this->_app = $OSCOM_PayPal;
+      $this->_app = $PayPal;
 
       $this->_app->loadLanguageFile('hooks/admin/orders/action.php');
     }
 
-    function execute() {
+    public function execute() {
       if ( isset($_GET['tabaction']) ) {
-        $ppstatus_query = tep_db_query("select comments from orders_status_history where orders_id = '" . (int)$_GET['oID'] . "' and orders_status_id = '" . (int)OSCOM_APP_PAYPAL_TRANSACTIONS_ORDER_STATUS_ID . "' and comments like '%Transaction ID:%' order by date_added limit 1");
-        if ( tep_db_num_rows($ppstatus_query) ) {
-          $ppstatus = tep_db_fetch_array($ppstatus_query);
-
+        $ppstatus_query = $GLOBALS['db']->query(sprintf(<<<'EOSQL'
+SELECT comments
+ FROM orders_status_history
+ WHERE orders_id = %d AND orders_status_id = %d AND comments LIKE '%%Transaction ID:%%'
+ ORDER BY date_added
+ LIMIT 1
+EOSQL
+          , (int)$_GET['oID'], (int)PAYPAL_APP_TRANSACTIONS_ORDER_STATUS_ID));
+        if ( $ppstatus = $ppstatus_query->fetch_assoc() ) {
           $pp = [];
-
           foreach ( explode("\n", $ppstatus['comments']) as $s ) {
             if ( !empty($s) && (strpos($s, ':') !== false) ) {
               $entry = explode(':', $s, 2);
@@ -45,8 +49,12 @@
           }
 
           if ( isset($pp['Transaction ID']) ) {
-            $o_query = tep_db_query("select o.orders_id, o.payment_method, o.currency, o.currency_value, ot.value as total from orders o, orders_total ot where o.orders_id = '" . (int)$_GET['oID'] . "' and o.orders_id = ot.orders_id and ot.class = 'ot_total'");
-            $o = tep_db_fetch_array($o_query);
+            $o = $GLOBALS['db']->query(sprintf(<<<'EOSQL'
+SELECT o.orders_id, o.payment_method, o.currency, o.currency_value, ot.value AS total
+ FROM orders o INNER JOIN orders_total ot ON o.orders_id = ot.orders_id
+ WHERE o.orders_id = %d AND ot.class = 'ot_total'
+EOSQL
+              , (int)$_GET['oID']))->fetch_assoc();
 
             switch ( $_GET['tabaction'] ) {
               case 'getTransactionDetails':
@@ -66,17 +74,14 @@
                 break;
             }
 
-            tep_redirect(tep_href_link('orders.php', 'page=' . $_GET['page'] . '&oID=' . $_GET['oID'] . '&action=edit#section_status_history_content'));
+            Href::redirect(Guarantor::ensure_global('Admin')->link('orders.php', ['page' => $_GET['page'], 'oID' => $_GET['oID'], 'action' => 'edit']) . '#section_status_history_content');
           }
         }
       }
     }
 
-    function getTransactionDetails($comments, $order) {
-      global $messageStack;
-
+    public function getTransactionDetails($comments, $order) {
       $result = null;
-
       if ( !isset($comments['Gateway']) ) {
         $response = $this->_app->getApiResult('APP', 'GetTransactionDetails', ['TRANSACTIONID' => $comments['Transaction ID']], (strpos($order['payment_method'], 'Sandbox') === false) ? 'live' : 'sandbox');
 
@@ -169,34 +174,34 @@
         }
       }
 
-      if ( !empty($result) ) {
-        $sql_data_array = [
+      if ( $result ) {
+        $sql_data = [
           'orders_id' => (int)$order['orders_id'],
-          'orders_status_id' => OSCOM_APP_PAYPAL_TRANSACTIONS_ORDER_STATUS_ID,
+          'orders_status_id' => PAYPAL_APP_TRANSACTIONS_ORDER_STATUS_ID,
           'date_added' => 'NOW()',
           'customer_notified' => '0',
           'comments' => $result,
         ];
 
-        tep_db_perform('orders_status_history', $sql_data_array);
+        $GLOBALS['db']->perform('orders_status_history', $sql_data);
 
-        $messageStack->add_session($this->_app->getDef('ms_success_getTransactionDetails'), 'success');
+        $GLOBALS['messageStack']->add_session($this->_app->getDef('ms_success_getTransactionDetails'), 'success');
       } else {
-        $messageStack->add_session($this->_app->getDef('ms_error_getTransactionDetails'), 'error');
+        $GLOBALS['messageStack']->add_session($this->_app->getDef('ms_error_getTransactionDetails'), 'error');
       }
     }
 
-    function doCapture($comments, $order) {
-      global $messageStack;
-
+    public function doCapture($comments, $order) {
       $pass = false;
 
-      $capture_total = $capture_value = $this->_app->formatCurrencyRaw($order['total'], $order['currency'], $order['currency_value']);
-      $capture_final = true;
+      $capture_total = $GLOBALS['currencies']->format_raw($order['total'], true, $order['currency'], $order['currency_value']);
+      $capture_value = $GLOBALS['currencies']->format_raw($_POST['ppCaptureAmount'], true, $order['currency'], 1);
 
-      if ( $this->_app->formatCurrencyRaw($_POST['ppCaptureAmount'], $order['currency'], 1) < $capture_value ) {
-        $capture_value = $this->_app->formatCurrencyRaw($_POST['ppCaptureAmount'], $order['currency'], 1);
-        $capture_final = (isset($_POST['ppCatureComplete']) && ($_POST['ppCatureComplete'] === 'true'));
+      if ( $capture_value < $capture_total ) {
+        $capture_final = isset($_POST['ppCaptureComplete']) && ($_POST['ppCaptureComplete'] === 'true');
+      } else {
+        $capture_value = $capture_total;
+        $capture_final = true;
       }
 
       if ( !isset($comments['Gateway']) ) {
@@ -234,32 +239,29 @@
         $result = 'PayPal App: Capture (' . $capture_value . ')' . "\n";
 
         if ( ($capture_value < $capture_total) && ($capture_final === true) ) {
-          $result .= 'PayPal App: Void (' . $this->_app->formatCurrencyRaw($capture_total - $capture_value, $order['currency'], 1) . ')' . "\n";
+          $result .= 'PayPal App: Void (' . $GLOBALS['currencies']->format_raw($capture_total - $capture_value, true, $order['currency'], 1) . ')' . "\n";
         }
 
         $result .= 'Transaction ID: ' . htmlspecialchars($transaction_id);
 
-        $sql_data_array = [
+        $sql_data = [
           'orders_id' => (int)$order['orders_id'],
-          'orders_status_id' => OSCOM_APP_PAYPAL_TRANSACTIONS_ORDER_STATUS_ID,
+          'orders_status_id' => PAYPAL_APP_TRANSACTIONS_ORDER_STATUS_ID,
           'date_added' => 'NOW()',
           'customer_notified' => '0',
           'comments' => $result,
         ];
 
-        tep_db_perform('orders_status_history', $sql_data_array);
+        $GLOBALS['db']->perform('orders_status_history', $sql_data);
 
-        $messageStack->add_session($this->_app->getDef('ms_success_doCapture'), 'success');
+        $GLOBALS['messageStack']->add_session($this->_app->getDef('ms_success_doCapture'), 'success');
       } else {
-        $messageStack->add_session($this->_app->getDef('ms_error_doCapture'), 'error');
+        $GLOBALS['messageStack']->add_session($this->_app->getDef('ms_error_doCapture'), 'error');
       }
     }
 
-    function doVoid($comments, $order) {
-      global $messageStack;
-
+    public function doVoid($comments, $order) {
       $pass = false;
-
       if ( !isset($comments['Gateway']) ) {
         $response = $this->_app->getApiResult('APP', 'DoVoid', ['AUTHORIZATIONID' => $comments['Transaction ID']], (strpos($order['payment_method'], 'Sandbox') === false) ? 'live' : 'sandbox');
 
@@ -275,54 +277,61 @@
       }
 
       if ( $pass === true ) {
-        $capture_total = $this->_app->formatCurrencyRaw($order['total'], $order['currency'], $order['currency_value']);
+        $capture_total = $GLOBALS['currencies']->format_raw($order['total'], $order['currency'], $order['currency_value']);
 
-        $c_query = tep_db_query("select comments from orders_status_history where orders_id = '" . (int)$order['orders_id'] . "' and orders_status_id = '" . (int)OSCOM_APP_PAYPAL_TRANSACTIONS_ORDER_STATUS_ID . "' and comments like 'PayPal App: Capture (%'");
-        while ( $c = tep_db_fetch_array($c_query) ) {
+        $c_query = $GLOBALS['db']->query(sprintf(<<<'EOSQL'
+SELECT comments FROM orders_status_history WHERE orders_id = %d AND orders_status_id = %d AND comments LIKE 'PayPal App: Capture (%%'
+EOSQL
+          , (int)$order['orders_id'], (int)PAYPAL_APP_TRANSACTIONS_ORDER_STATUS_ID));
+        while ( $c = $c_query->fetch_assoc() ) {
           if ( preg_match('/^PayPal App\: Capture \(([0-9\.]+)\)\n/', $c['comments'], $c_matches) ) {
-            $capture_total -= $this->_app->formatCurrencyRaw($c_matches[1], $order['currency'], 1);
+            $capture_total -= $GLOBALS['currencies']->format_raw($c_matches[1], $order['currency'], 1);
           }
         }
 
         $result = 'PayPal App: Void (' . $capture_total . ')';
 
-        $sql_data_array = [
+        $sql_data = [
           'orders_id' => (int)$order['orders_id'],
-          'orders_status_id' => OSCOM_APP_PAYPAL_TRANSACTIONS_ORDER_STATUS_ID,
+          'orders_status_id' => PAYPAL_APP_TRANSACTIONS_ORDER_STATUS_ID,
           'date_added' => 'NOW()',
           'customer_notified' => '0',
           'comments' => $result,
         ];
 
-        tep_db_perform('orders_status_history', $sql_data_array);
+        $GLOBALS['db']->perform('orders_status_history', $sql_data);
 
-        $messageStack->add_session($this->_app->getDef('ms_success_doVoid'), 'success');
+        $GLOBALS['messageStack']->add_session($this->_app->getDef('ms_success_doVoid'), 'success');
       } else {
-        $messageStack->add_session($this->_app->getDef('ms_error_doVoid'), 'error');
+        $GLOBALS['messageStack']->add_session($this->_app->getDef('ms_error_doVoid'), 'error');
       }
     }
 
-    function refundTransaction($comments, $order) {
-      global $messageStack;
-
+    public function refundTransaction($comments, $order) {
       if ( isset($_POST['ppRefund']) ) {
         $tids = [];
 
-        $ppr_query = tep_db_query("select comments from orders_status_history where orders_id = '" . (int)$order['orders_id'] . "' and orders_status_id = '" . (int)OSCOM_APP_PAYPAL_TRANSACTIONS_ORDER_STATUS_ID . "' and comments like 'PayPal App: %' order by date_added desc");
-        if ( tep_db_num_rows($ppr_query) ) {
-          while ( $ppr = tep_db_fetch_array($ppr_query) ) {
+        $ppr_query = $GLOBALS['db']->query(sprintf(<<<'EOSQL'
+SELECT comments
+ FROM orders_status_history
+ WHERE orders_id = %d AND orders_status_id = %d AND comments LIKE 'PayPal App: %%'
+ ORDER BY date_added DESC
+EOSQL
+          , (int)$order['orders_id'], (int)PAYPAL_APP_TRANSACTIONS_ORDER_STATUS_ID));
+        if ( mysqli_num_rows($ppr_query) ) {
+          while ( $ppr = $ppr_query->fetch_assoc() ) {
             if ( strpos($ppr['comments'], 'PayPal App: Refund') !== false ) {
-              preg_match('/Parent ID\: ([A-Za-z0-9]+)$/', $ppr['comments'], $ppr_matches);
+              preg_match('{Parent ID\: ([A-Za-z0-9]+)$}', $ppr['comments'], $ppr_matches);
 
               $tids[$ppr_matches[1]]['Refund'] = true;
             } elseif ( strpos($ppr['comments'], 'PayPal App: Capture') !== false ) {
-              preg_match('/^PayPal App\: Capture \(([0-9\.]+)\).*Transaction ID\: ([A-Za-z0-9]+)/s', $ppr['comments'], $ppr_matches);
+              preg_match('{^PayPal App\: Capture \(([0-9\.]+)\).*Transaction ID\: ([A-Za-z0-9]+)}s', $ppr['comments'], $ppr_matches);
 
               $tids[$ppr_matches[2]]['Amount'] = $ppr_matches[1];
             }
           }
         } elseif ( $comments['Payment Status'] == 'Completed' ) {
-          $tids[$comments['Transaction ID']]['Amount'] = $this->_app->formatCurrencyRaw($order['total'], $order['currency'], $order['currency_value']);
+          $tids[$comments['Transaction ID']]['Amount'] = $GLOBALS['currencies']->format_raw($order['total'], true, $order['currency'], $order['currency_value']);
         }
 
         $rids = [];
@@ -361,19 +370,20 @@
 
             $sql_data_array = [
               'orders_id' => (int)$order['orders_id'],
-              'orders_status_id' => OSCOM_APP_PAYPAL_TRANSACTIONS_ORDER_STATUS_ID,
+              'orders_status_id' => PAYPAL_APP_TRANSACTIONS_ORDER_STATUS_ID,
               'date_added' => 'NOW()',
               'customer_notified' => '0',
               'comments' => $result,
             ];
 
-            tep_db_perform('orders_status_history', $sql_data_array);
+            $GLOBALS['db']->perform('orders_status_history', $sql_data_array);
 
-            $messageStack->add_session($this->_app->getDef('ms_success_refundTransaction', ['refund_amount' => $tids[$id]['Amount']]), 'success');
+            $GLOBALS['messageStack']->add_session($this->_app->getDef('ms_success_refundTransaction', ['refund_amount' => $tids[$id]['Amount']]), 'success');
           } else {
-            $messageStack->add_session($this->_app->getDef('ms_error_refundTransaction', ['refund_amount' => $tids[$id]['Amount']]), 'error');
+            $GLOBALS['messageStack']->add_session($this->_app->getDef('ms_error_refundTransaction', ['refund_amount' => $tids[$id]['Amount']]), 'error');
           }
         }
       }
     }
+
   }

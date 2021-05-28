@@ -10,7 +10,8 @@
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_DP_Cfg_cards {
+  class PayPal_DP_Cfg_cards {
+
     var $default = 'visa;mastercard;discover;amex;maestro';
     var $title;
     var $description;
@@ -18,16 +19,16 @@
     var $cards = ['visa' => 'Visa', 'mastercard' => 'MasterCard', 'discover' => 'Discover Card', 'amex' => 'American Express', 'maestro' => 'Maestro'];
 
     function __construct() {
-      global $OSCOM_PayPal;
+      global $PayPal;
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_dp_cards_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_dp_cards_desc');
+      $this->title = $PayPal->getDef('cfg_dp_cards_title');
+      $this->description = $PayPal->getDef('cfg_dp_cards_desc');
     }
 
     function getSetField() {
-      $active = explode(';', OSCOM_APP_PAYPAL_DP_CARDS);
+      $active = explode(';', PAYPAL_APP_DP_CARDS);
 
-      $input = null;
+      $input = '';
 
       foreach ( $this->cards as $key => $value ) {
         $input .= '<div class="custom-control custom-checkbox custom-control-inline">';
@@ -58,5 +59,5 @@ EOT;
 
       return $result;
     }
+
   }
-?>

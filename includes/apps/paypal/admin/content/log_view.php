@@ -13,17 +13,17 @@
 
 <div class="row">
   <div class="col">
-    <h1 class="display-4"><?= $OSCOM_PayPal->getDef('heading_log_view') ?></h1>
+    <h1 class="display-4"><?= $PayPal->getDef('heading_log_view') ?></h1>
   </div>
   <div class="col text-right">
-    <h1 class="display-4"><?= $OSCOM_PayPal->drawButton($OSCOM_PayPal->getDef('button_back'), tep_href_link('paypal.php', 'action=log&page=' . $_GET['page']), 'info') ?></h1>
+    <h1 class="display-4"><?= $PayPal->drawButton($PayPal->getDef('button_back'), Guarantor::ensure_global('Admin')->link('paypal.php', ['action' => 'log', 'page' => $_GET['page']]), 'info') ?></h1>
   </div>
 </div>
 
 <table class="table table-hover">
   <thead class="thead-dark">
     <tr>
-      <th colspan="2"><?= $OSCOM_PayPal->getDef('table_heading_entries_request') ?></th>
+      <th colspan="2"><?= $PayPal->getDef('table_heading_entries_request') ?></th>
     </tr>
   </thead>
   <tbody>
@@ -47,7 +47,7 @@
 <table class="table table-hover">
   <thead class="thead-dark">
     <tr>
-      <th colspan="2"><?= $OSCOM_PayPal->getDef('table_heading_entries_response') ?></th>
+      <th colspan="2"><?= $PayPal->getDef('table_heading_entries_response') ?></th>
     </tr>
   </thead>
   <tbody>

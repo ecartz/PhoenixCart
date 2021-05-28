@@ -14,7 +14,7 @@
   $ppBalanceResult = ['rpcStatus' => -1];
 
   if ( isset($_GET['type']) && in_array($_GET['type'], ['live', 'sandbox']) ) {
-    $ppBalanceResponse = $OSCOM_PayPal->getApiResult('APP', 'GetBalance', null, $_GET['type']);
+    $ppBalanceResponse = $PayPal->getApiResult('APP', 'GetBalance', null, $_GET['type']);
 
     if ( isset($ppBalanceResponse['ACK']) && ($ppBalanceResponse['ACK'] === 'Success') ) {
       $currencies = new currencies();

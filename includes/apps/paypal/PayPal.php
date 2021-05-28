@@ -10,9 +10,7 @@
   Released under the GNU General Public License
 */
 
-  include DIR_FS_CATALOG . 'includes/apps/paypal/functions/compatibility.php';
-
-  class OSCOM_PayPal {
+  class PayPal {
 
     public $_code = 'paypal';
     public $_title = 'PayPal App';
@@ -21,9 +19,9 @@
     public $_identifier = 'osCommerce_PPapp_v5';
     public $_definitions = [];
 
-    function log($module, $action, $result, $request, $response, $server, $is_ipn = false) {
-      if (!in_array(OSCOM_APP_PAYPAL_LOG_TRANSACTIONS, ['1', '0'])
-       || ((OSCOM_APP_PAYPAL_LOG_TRANSACTIONS == '0') && ($result === 1)))
+    public function log($module, $action, $result, $request, $response, $server, $is_ipn = false) {
+      if (!in_array(PAYPAL_APP_LOG_TRANSACTIONS, ['1', '0'])
+       || ((PAYPAL_APP_LOG_TRANSACTIONS == '0') && ($result === 1)))
       {
         return false;
       }
@@ -70,21 +68,21 @@
         'date_added' => 'NOW()',
       ];
 
-      $GLOBALS['db']->perform('oscom_app_paypal_log', $data);
+      $GLOBALS['db']->perform('paypal_app_log', $data);
     }
 
-    function migrate() {
+    public function migrate() {
       $migrated = false;
 
       foreach ( $this->getModules() as $m ) {
-        $key = 'OSCOM_APP_PAYPAL_' . $m . '_STATUS';
+        $key = 'PAYPAL_APP_' . $m . '_STATUS';
         if ( defined($key) ) {
           continue;
         }
 
         $this->saveParameter($key, '');
 
-        $class = "OSCOM_PayPal_$m";
+        $class = "PayPal_$m";
         if ( !class_exists($class) ) {
           $this->loadLanguageFile("modules/$m/$m.php");
 
@@ -140,18 +138,18 @@
       return $modules;
     }
 
-    function isInstalled($module) {
+    public function isInstalled($module) {
       $module = basename($module);
       if ( !file_exists(DIR_FS_CATALOG . "includes/apps/paypal/modules/$module/$module.php") ) {
         return false;
       }
 
-      $key = 'OSCOM_APP_PAYPAL_' . $module . '_STATUS';
+      $key = 'PAYPAL_APP_' . $module . '_STATUS';
       return defined($key) && !Text::is_empty(constant($key));
     }
 
-    function getModuleInfo($module, $info) {
-      $class = 'OSCOM_PayPal_' . $module;
+    public function getModuleInfo($module, $info) {
+      $class = 'PayPal_' . $module;
 
       if ( !class_exists($class) ) {
         $this->loadLanguageFile("modules/$module/$module.php");
@@ -164,36 +162,40 @@
       return $m->{'_' . $info};
     }
 
-    function hasCredentials($module, $type = null) {
-      if ( !defined('OSCOM_APP_PAYPAL_' . $module . '_STATUS') ) {
+    public function hasCredentials($module, $type = null) {
+      $server_status = 'PAYPAL_APP_' . $module . '_STATUS';
+      if ( !defined($server_status) ) {
         return false;
       }
 
-      $server = constant('OSCOM_APP_PAYPAL_' . $module . '_STATUS');
-
-      if ( !in_array($server, ['1', '0']) ) {
-        return false;
+      switch (constant($server_status)) {
+        case '0':
+          $prefix = 'PAYPAL_APP_SANDBOX';
+          break;
+        case '1':
+          $prefix = 'PAYPAL_APP_LIVE';
+          break;
+        default:
+          return false;
       }
-
-      $server = ($server == '1') ? 'LIVE' : 'SANDBOX';
 
       if ( $type == 'email') {
-        $creds = ['OSCOM_APP_PAYPAL_' . $server . '_SELLER_EMAIL'];
-      } elseif ( substr($type, 0, 7) == 'payflow' ) {
+        $creds = [$prefix . '_SELLER_EMAIL'];
+      } elseif ( substr($type, 0, 7) === 'payflow' ) {
         if ( strlen($type) > 7 ) {
-          $creds = ['OSCOM_APP_PAYPAL_PF_' . $server . '_' . strtoupper(substr($type, 8))];
+          $creds = [$prefix . '_PF_' . strtoupper(substr($type, 8))];
         } else {
           $creds = [
-            'OSCOM_APP_PAYPAL_PF_' . $server . '_VENDOR',
-            'OSCOM_APP_PAYPAL_PF_' . $server . '_PASSWORD',
-            'OSCOM_APP_PAYPAL_PF_' . $server . '_PARTNER',
+            $prefix . '_PF_VENDOR',
+            $prefix . '_PF_PASSWORD',
+            $prefix . '_PF_PARTNER',
           ];
         }
       } else {
         $creds = [
-          'OSCOM_APP_PAYPAL_' . $server . '_API_USERNAME',
-          'OSCOM_APP_PAYPAL_' . $server . '_API_PASSWORD',
-          'OSCOM_APP_PAYPAL_' . $server . '_API_SIGNATURE',
+          $prefix . '_API_USERNAME',
+          $prefix . '_API_PASSWORD',
+          $prefix . '_API_SIGNATURE',
         ];
       }
 
@@ -206,47 +208,39 @@
       return true;
     }
 
-    function getCredentials($module, $type) {
-      if ( constant('OSCOM_APP_PAYPAL_' . $module . '_STATUS') == '1' ) {
-        if ( $type == 'email') {
-          return constant('OSCOM_APP_PAYPAL_LIVE_SELLER_EMAIL');
-        } elseif ( $type == 'email_primary') {
-          return constant('OSCOM_APP_PAYPAL_LIVE_SELLER_EMAIL_PRIMARY');
-        } elseif ( substr($type, 0, 7) == 'payflow' ) {
-          return constant('OSCOM_APP_PAYPAL_PF_LIVE_' . strtoupper(substr($type, 8)));
-        } else {
-          return constant('OSCOM_APP_PAYPAL_LIVE_API_' . strtoupper($type));
-        }
-      }
+    public function getCredentials($module, $type) {
+      $prefix = ( constant('PAYPAL_APP_' . $module . '_STATUS') == '1' )
+              ? 'PAYPAL_APP_LIVE_'
+              : 'PAYPAL_APP_SANDBOX_';
 
       if ( $type == 'email') {
-        return constant('OSCOM_APP_PAYPAL_SANDBOX_SELLER_EMAIL');
+        return constant($prefix . 'SELLER_EMAIL');
       } elseif ( $type == 'email_primary') {
-        return constant('OSCOM_APP_PAYPAL_SANDBOX_SELLER_EMAIL_PRIMARY');
+        return constant($prefix . 'SELLER_EMAIL_PRIMARY');
       } elseif ( substr($type, 0, 7) == 'payflow' ) {
-        return constant('OSCOM_APP_PAYPAL_PF_SANDBOX_' . strtoupper(substr($type, 8)));
+        return constant($prefix . 'PF_' . strtoupper(substr($type, 8)));
       } else {
-        return constant('OSCOM_APP_PAYPAL_SANDBOX_API_' . strtoupper($type));
+        return constant($prefix . 'API_' . strtoupper($type));
       }
     }
 
-    function hasApiCredentials($server, $type = null) {
+    public function hasApiCredentials($server, $type = null) {
       $server = ($server === 'live') ? 'LIVE' : 'SANDBOX';
 
       if ( $type == 'email') {
-        $creds = ['OSCOM_APP_PAYPAL_' . $server . '_SELLER_EMAIL'];
+        $creds = ['PAYPAL_APP_' . $server . '_SELLER_EMAIL'];
       } elseif ( substr($type, 0, 7) == 'payflow' ) {
-        $creds = ['OSCOM_APP_PAYPAL_PF_' . $server . '_' . strtoupper(substr($type, 8))];
+        $creds = ['PAYPAL_APP_' . $server . '_PF_' . strtoupper(substr($type, 8))];
       } else {
         $creds = [
-          'OSCOM_APP_PAYPAL_' . $server . '_API_USERNAME',
-          'OSCOM_APP_PAYPAL_' . $server . '_API_PASSWORD',
-          'OSCOM_APP_PAYPAL_' . $server . '_API_SIGNATURE',
+          'PAYPAL_APP_' . $server . '_API_USERNAME',
+          'PAYPAL_APP_' . $server . '_API_PASSWORD',
+          'PAYPAL_APP_' . $server . '_API_SIGNATURE',
         ];
       }
 
       foreach ( $creds as $c ) {
-        if ( !defined($c) || (strlen(trim(constant($c))) < 1) ) {
+        if ( !defined($c) || Text::is_empty(constant($c)) ) {
           return false;
         }
       }
@@ -254,10 +248,10 @@
       return true;
     }
 
-    function getApiCredentials($server, $type) {
+    public function getApiCredentials($server, $type) {
       $key = (('live' === $server)
-            ? 'OSCOM_APP_PAYPAL_LIVE_API_'
-            : 'OSCOM_APP_PAYPAL_SANDBOX_API_')
+            ? 'PAYPAL_APP_LIVE_API_'
+            : 'PAYPAL_APP_SANDBOX_API_')
            . strtoupper($type);
 
       if ( defined($key) ) {
@@ -265,17 +259,16 @@
       }
     }
 
-    function getParameters($module) {
-      $result = [];
-
+    public function getParameters($module) {
+      $base = 'PAYPAL_APP_';
       if ( 'G' === $module ) {
         $path = DIR_FS_CATALOG . 'includes/apps/paypal/cfg_params/';
-        $base = 'OSCOM_APP_PAYPAL_';
       } else {
         $path = DIR_FS_CATALOG . "includes/apps/paypal/modules/$module/cfg_params/";
-        $base = 'OSCOM_APP_PAYPAL_' . $module . '_';
+        $base .= $module . '_';
       }
 
+      $result = [];
       if ( $dir = @dir($path) ) {
         while ( $file = $dir->read() ) {
           if ( !is_dir("$path$file") && (pathinfo($file, PATHINFO_EXTENSION) === 'php') ) {
@@ -287,13 +280,12 @@
       return $result;
     }
 
-    function getInputParameters($module) {
+    public function getInputParameters($module) {
       $result = [];
 
-      if ( $module == 'G' ) {
-        $cut = 'OSCOM_APP_PAYPAL_';
-      } else {
-        $cut = 'OSCOM_APP_PAYPAL_' . $module . '_';
+      $cut = 'PAYPAL_APP_';
+      if ( $module != 'G' ) {
+        $cut .= $module . '_';
       }
 
       $cut_length = strlen($cut);
@@ -302,7 +294,7 @@
         $p = strtolower(substr($key, $cut_length));
 
         if ( $module == 'G' ) {
-          $cfg_class = 'OSCOM_PayPal_Cfg_' . $p;
+          $cfg_class = 'PayPal_Cfg_' . $p;
 
           if ( !class_exists($cfg_class) ) {
             $this->loadLanguageFile('cfg_params/' . $p . '.php');
@@ -310,7 +302,7 @@
             include(DIR_FS_CATALOG . 'includes/apps/paypal/cfg_params/' . $p . '.php');
           }
         } else {
-          $cfg_class = 'OSCOM_PayPal_' . $module . '_Cfg_' . $p;
+          $cfg_class = 'PayPal_' . $module . '_Cfg_' . $p;
 
           if ( !class_exists($cfg_class) ) {
             $this->loadLanguageFile('modules/' . $module . '/cfg_params/' . $p . '.php');
@@ -356,22 +348,22 @@
     }
 
 // APP calls require $server to be "live" or "sandbox"
-    function getApiResult($module, $call, $extra_params = null, $server = null, $is_ipn = false) {
+    public function getApiResult($module, $call, $extra_params = null, $server = null, $is_ipn = false) {
       if ( $module == 'APP' ) {
-        $function = 'OSCOM_PayPal_Api_' . $call;
+        $function = 'PayPal_Api_' . $call;
 
         if ( !function_exists($function) ) {
-          require DIR_FS_CATALOG . 'includes/apps/paypal/api/' . $call . '.php';
+          require DIR_FS_CATALOG . "includes/apps/paypal/api/$call.php";
         }
       } else {
         if ( !isset($server) ) {
-          $server = (constant('OSCOM_APP_PAYPAL_' . $module . '_STATUS') == '1') ? 'live' : 'sandbox';
+          $server = (constant('PAYPAL_APP_' . $module . '_STATUS') == '1') ? 'live' : 'sandbox';
         }
 
-        $function = 'OSCOM_PayPal_' . $module . '_Api_' . $call;
+        $function = 'PayPal_' . $module . '_Api_' . $call;
 
         if ( !function_exists($function) ) {
-          include(DIR_FS_CATALOG . 'includes/apps/paypal/modules/' . $module . '/api/' . $call . '.php');
+          include DIR_FS_CATALOG . "includes/apps/paypal/modules/$module/api/$call.php";
         }
       }
 
@@ -382,7 +374,7 @@
       return $result['res'];
     }
 
-    function makeApiCall($url, $parameters = null, $headers = null, $opts = null) {
+    public function makeApiCall($url, $parameters = null, $headers = null, $opts = null) {
       $server = parse_url($url);
 
       if ( !isset($server['port']) ) {
@@ -406,15 +398,15 @@
         curl_setopt($curl, CURLOPT_POSTFIELDS, $parameters);
       }
 
-      if ( isset($headers) && is_array($headers) && !empty($headers) ) {
+      if ( is_array($headers) && $headers ) {
         curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
       }
 
-      if ( isset($server['user']) && isset($server['pass']) ) {
+      if ( isset($server['user'], $server['pass']) ) {
         curl_setopt($curl, CURLOPT_USERPWD, $server['user'] . ':' . $server['pass']);
       }
 
-      if ( defined('OSCOM_APP_PAYPAL_VERIFY_SSL') && (OSCOM_APP_PAYPAL_VERIFY_SSL == '1') ) {
+      if ( defined('PAYPAL_APP_VERIFY_SSL') && (PAYPAL_APP_VERIFY_SSL == '1') ) {
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
         curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 2);
 
@@ -431,7 +423,7 @@
       if (substr($server['host'], -10) == 'paypal.com') {
         $ssl_version = 0;
 
-        if ( defined('OSCOM_APP_PAYPAL_SSL_VERSION') && (OSCOM_APP_PAYPAL_SSL_VERSION == '1') ) {
+        if ( defined('PAYPAL_APP_SSL_VERSION') && (PAYPAL_APP_SSL_VERSION == '1') ) {
           $ssl_version = 6;
         }
 
@@ -444,9 +436,9 @@
         }
       }
 
-      if ( defined('OSCOM_APP_PAYPAL_PROXY') && !Text::is_empty(OSCOM_APP_PAYPAL_PROXY) ) {
+      if ( defined('PAYPAL_APP_PROXY') && !Text::is_empty(PAYPAL_APP_PROXY) ) {
         curl_setopt($curl, CURLOPT_HTTPPROXYTUNNEL, true);
-        curl_setopt($curl, CURLOPT_PROXY, OSCOM_APP_PAYPAL_PROXY);
+        curl_setopt($curl, CURLOPT_PROXY, PAYPAL_APP_PROXY);
       }
 
       $result = curl_exec($curl);
@@ -464,7 +456,7 @@
       return $result;
     }
 
-    function drawButton($title = null, $link = null, $type = null, $params = null, $force_css = false) {
+    public function drawButton($title = null, $link = null, $colour = null, $params = [], $unused = false) {
       $colours = [
         'success' => 'success',
         'error' => 'danger',
@@ -473,99 +465,88 @@
         'primary' => 'primary',
       ];
 
-      if ( !isset($type) || !in_array($type, array_keys($colours)) ) {
-        $type = 'info';
+      if ( !isset($colour, $colours[$colour]) ) {
+        $colour = 'info';
       }
+      $class = 'btn btn-' . $colours[$colour] . ' pp-button pp-button-' . $colours[$colour];
 
-      $button = '';
-
-      if ( isset($link) ) {
-        $button .= '<a href="' . $link . '" class="btn btn-' . $colours[$type] . ' pp-button';
-
-        if ( isset($type) ) {
-          $button .= ' pp-button-' . $type;
-        }
-
-        $button .= '"';
-
-        if ( isset($params) ) {
-          $button .= ' ' . $params;
-        }
-
-        //if ( $force_css == true ) {
-          //$button .= ' style="' . $css . '"';
-        //}
-
-        $button .= '>' . $title . '</a>';
-      } else {
-        $button .= '<button type="submit" class="btn btn-' . $colours[$type] . ' pp-button';
-
-        if ( isset($type) ) {
-          $button .= ' pp-button-' . $type;
-        }
-
-        $button .= '"';
-
-        if ( isset($params) ) {
-          $button .= ' ' . $params;
-        }
-
-        //if ( $force_css == true ) {
-        //  $button .= ' style="' . $css . '"';
-        //}
-
-        $button .= '>' . $title . '</button>';
+      if (!is_array($params)) {
+        $params = [];
       }
+      $params['type'] = isset($link) ? 'button' : 'submit';
 
-      return $button;
+      return new Button($title, null, $class, $params, $link);
     }
 
-    function createRandomValue($length, $type = 'mixed') {
+    public function createRandomValue($length, $type = 'mixed') {
       return Password::create_random($length, $type);
     }
 
-    function saveParameter($key, $value, $title = null, $description = null, $set_func = null) {
+    public function saveParameter($key, $value, $title = null, $description = null, $set_func = null) {
       global $db;
 
       if ( defined($key) ) {
         $db->query("UPDATE configuration SET configuration_value = '" . $db->escape($value) . "' WHERE configuration_key = '" . $db->escape($key) . "'");
       } else {
-        $sql = 'INSERT INTO configuration (configuration_title, configuration_key, configuration_value, configuration_description, configuration_group_id, sort_order, ';
-        if ( isset($set_func) ) {
-          $sql .= 'set_function, ';
-        }
-        $sql .= "date_added) VALUES ('" . $db->escape($title ?? 'PayPal App Parameter')
-              . "', '" . $db->escape($key) . "', '" . $db->escape($value) . "', '"
-              . $db->escape($description ?? 'A parameter for the PayPal Application.')
-              . "', 6, 0, ";
-        if ( isset($set_func) ) {
-          $sql .= "'" . $db->escape($set_func) . "', ";
-        }
-        $sql .= 'NOW())';
+        $sql_data = [
+          'configuration_title' => $title ?? 'PayPal App Parameter',
+          'configuration_key' => $key,
+          'configuration_value' => $value,
+          'configuration_description' => $description ?? 'A parameter for the PayPal Application.',
+          'configuration_group_id' => 6,
+          'sort_order' => 0,
+          'date_added' => 'NOW()',
+        ];
 
-        $db->query($sql);
+        if (isset($set_func)) {
+          $sql_data['set_function'] = $set_func;
+        }
+
+        $db->perform('configuration', $sql_data);
 
         define($key, $value);
       }
     }
 
-    function deleteParameter($key) {
+    public function deleteParameter($key) {
       $GLOBALS['db']->query("DELETE FROM configuration WHERE configuration_key = '" . $GLOBALS['db']->escape($key) . "'");
     }
 
-    function formatCurrencyRaw($total, $currency_code = null, $currency_value = null) {
+    public function migrate_parameter_if($from, $to) {
+      if ( defined($from) ) {
+        if ( !Text::is_empty($from) ) {
+          if ( !defined($to) || Text::is_empty(constant($to)) ) {
+            $PayPal->saveParameter($to, constant($from));
+          }
+        }
+
+        $PayPal->deleteParameter($from);
+      }
+    }
+
+    public function migrate_parameter($from, $to) {
+      if ( defined($from) ) {
+        if ( !defined($to) ) {
+          $PayPal->saveParameter($to, constant($from));
+        }
+
+        $PayPal->deleteParameter($from);
+      }
+    }
+
+    public function formatCurrencyRaw($total, $currency_code = null, $currency_value = null) {
       return $GLOBALS['currencies']->format_raw($total, true, $currency_code, $currency_value);
     }
 
-    function getCode() {
+    public function getCode() {
       return $this->_code;
     }
 
-    function getTitle() {
+    public function getTitle() {
       return $this->_title;
     }
 
-    function getVersion() {
+    public function getVersion() {
       if ( !isset($this->_version) ) {
         $version = trim(file_get_contents(DIR_FS_CATALOG . 'includes/apps/paypal/version.txt'));
 
@@ -579,39 +560,39 @@
       return $this->_version;
     }
 
-    function getApiVersion() {
+    public function getApiVersion() {
       return $this->_api_version;
     }
 
-    function getIdentifier() {
+    public function getIdentifier() {
       return $this->_identifier;
     }
 
-    function hasAlert() {
-      return isset($_SESSION['OSCOM_PayPal_Alerts']);
+    public function hasAlert() {
+      return isset($_SESSION['PayPal_Alerts']);
     }
 
-    function addAlert($message, $type) {
+    public function addAlert($message, $type) {
       if ( in_array($type, ['error', 'warning', 'success']) ) {
-        if ( !isset($_SESSION['OSCOM_PayPal_Alerts'][$type]) ) {
-          if ( !isset($_SESSION['OSCOM_PayPal_Alerts']) ) {
-            $_SESSION['OSCOM_PayPal_Alerts'] = [];
+        if ( !isset($_SESSION['PayPal_Alerts'][$type]) ) {
+          if ( !isset($_SESSION['PayPal_Alerts']) ) {
+            $_SESSION['PayPal_Alerts'] = [];
           }
 
-          $_SESSION['OSCOM_PayPal_Alerts'][$type] = [];
+          $_SESSION['PayPal_Alerts'][$type] = [];
         }
 
-        $_SESSION['OSCOM_PayPal_Alerts'][$type][] = $message;
+        $_SESSION['PayPal_Alerts'][$type][] = $message;
       }
     }
 
-    function getAlerts() {
+    public function getAlerts() {
       $output = '';
 
-      if ( !empty($_SESSION['OSCOM_PayPal_Alerts']) ) {
+      if ( !empty($_SESSION['PayPal_Alerts']) ) {
         $results = [];
 
-        foreach ( $_SESSION['OSCOM_PayPal_Alerts'] as $type => $messages ) {
+        foreach ( $_SESSION['PayPal_Alerts'] as $type => $messages ) {
           if ( in_array($type, ['error', 'warning', 'success']) ) {
             $m = '';
 
@@ -630,18 +611,18 @@
         }
       }
 
-      unset($_SESSION['OSCOM_PayPal_Alerts']);
+      unset($_SESSION['PayPal_Alerts']);
 
       return $output;
     }
 
-    function install($module) {
-      $cut_length = strlen('OSCOM_APP_PAYPAL_' . $module . '_');
+    public function install($module) {
+      $cut_length = strlen('PAYPAL_APP_' . $module . '_');
 
       foreach ( $this->getParameters($module) as $key ) {
         $p = strtolower(substr($key, $cut_length));
 
-        $cfg_class = 'OSCOM_PayPal_' . $module . '_Cfg_' . $p;
+        $cfg_class = 'PayPal_' . $module . '_Cfg_' . $p;
 
         if ( !class_exists($cfg_class) ) {
           $this->loadLanguageFile("modules/$module/cfg_params/$p.php");
@@ -654,7 +635,7 @@
         $this->saveParameter($key, $cfg->default, ($cfg->title ?? null), ($cfg->description ?? null), ($cfg->set_func ?? null));
       }
 
-      $m_class = "OSCOM_PayPal_$module";
+      $m_class = "PayPal_$module";
 
       if ( !class_exists($m_class) ) {
         $this->loadLanguageFile("modules/$module/$module.php");
@@ -669,10 +650,10 @@
       }
     }
 
-    function uninstall($module) {
-      $GLOBALS['db']->query("DELETE FROM configuration WHERE configuration_key LIKE 'OSCOM_APP_PAYPAL_" . $GLOBALS['db']->escape($module) . "_%'");
+    public function uninstall($module) {
+      $GLOBALS['db']->query("DELETE FROM configuration WHERE configuration_key LIKE 'PAYPAL_APP_" . $GLOBALS['db']->escape($module) . "_%'");
 
-      $m_class = "OSCOM_PayPal_$module";
+      $m_class = "PayPal_$module";
 
       if ( !class_exists($m_class) ) {
         $this->loadLanguageFile("modules/$module/$module.php");
@@ -687,28 +668,28 @@
       }
     }
 
-    function logUpdate($message, $version) {
+    public function logUpdate($message, $version) {
       if ( is_writable(DIR_FS_CATALOG . 'includes/apps/paypal/work') ) {
         file_put_contents(DIR_FS_CATALOG . "includes/apps/paypal/work/update_log-$version.php", '[' . date('d-M-Y H:i:s') . '] ' . $message . "\n", FILE_APPEND);
       }
     }
 
-    public function loadLanguageFile($filename, $lang = null) {
-      $lang = basename($lang ?? $_SESSION['language']);
+    public function loadLanguageFile($filename, $language = null) {
+      $language = basename($language ?? $_SESSION['language']);
 
-      if ( $lang !== 'english' ) {
+      if ( $language !== 'english' ) {
         $this->loadLanguageFile($filename, 'english');
       }
 
-      $pathname = DIR_FS_CATALOG . "includes/apps/paypal/languages/$lang/$filename";
+      $pathname = DIR_FS_CATALOG . "includes/apps/paypal/languages/$language/$filename";
 
       if ( !file_exists($pathname) ) {
         return;
       }
 
       foreach ( array_filter(array_map('trim', file($pathname) ?: []), function ($v) {
-        return isset($v[0]) && ($v[0] !== '#');
-      }) as $line )
+          return isset($v[0]) && ($v[0] !== '#');
+        }) as $line )
       {
         $position = strpos($line, ' =');
 
@@ -720,7 +701,7 @@
       }
     }
 
-    function getDef($key, $values = null) {
+    public function getDef($key, $values = null) {
       $def = $this->_definitions[$key] ?? $key;
 
       if ( is_array($values) ) {
@@ -736,7 +717,7 @@
       return $def;
     }
 
-    function getDirectoryContents($base, &$result = []) {
+    public function getDirectoryContents($base, &$result = []) {
       foreach ( scandir($base) as $file ) {
         if ( ($file == '.') || ($file == '..') ) {
           continue;
@@ -754,7 +735,7 @@
       return $result;
     }
 
-    function isWritable($location) {
+    public function isWritable($location) {
       while ( !file_exists($location) ) {
         $location = dirname($location);
       }
@@ -762,7 +743,7 @@
       return is_writable($location);
     }
 
-    function rmdir($dir) {
+    public function rmdir($dir) {
       foreach ( array_diff(scandir($dir), ['.', '..']) as $file ) {
         $path = "$dir/$file";
         if ( is_dir($path) ) {
@@ -775,7 +756,7 @@
       return rmdir($dir);
     }
 
-    function displayPath($pathname) {
+    public function displayPath($pathname) {
       return ( DIRECTORY_SEPARATOR === '/' )
            ? $pathname
            : str_replace('/', DIRECTORY_SEPARATOR, $pathname);

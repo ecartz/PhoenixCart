@@ -13,36 +13,36 @@
 
 <div class="card" id="ppAccountBalanceLive">
   <div class="card-header">
-    <?= $OSCOM_PayPal->getDef('heading_live_account', ['account' => str_replace('_api1.', '@', $OSCOM_PayPal->getApiCredentials('live', 'username'))]) ?>
+    <?= $PayPal->getDef('heading_live_account', ['account' => str_replace('_api1.', '@', $PayPal->getApiCredentials('live', 'username'))]) ?>
   </div>
   <div class="card-body">
     <div id="ppBalanceLiveInfo">
-      <p><?= $OSCOM_PayPal->getDef('retrieving_balance_progress') ?></p>
+      <p><?= $PayPal->getDef('retrieving_balance_progress') ?></p>
     </div>
   </div>
 </div>
 
 <div class="card" id="ppAccountBalanceSandbox">
   <div class="card-header">
-    <?= $OSCOM_PayPal->getDef('heading_sandbox_account', ['account' => str_replace('_api1.', '@', $OSCOM_PayPal->getApiCredentials('sandbox', 'username'))]) ?>
+    <?= $PayPal->getDef('heading_sandbox_account', ['account' => str_replace('_api1.', '@', $PayPal->getApiCredentials('sandbox', 'username'))]) ?>
   </div>
   <div class="card-body">
     <div id="ppBalanceSandboxInfo">
-      <p><?= $OSCOM_PayPal->getDef('retrieving_balance_progress') ?></p>
+      <p><?= $PayPal->getDef('retrieving_balance_progress') ?></p>
     </div>
   </div>
 </div>
 
 <div class="card" id="ppAccountBalanceNone" style="display: none;">
   <div class="card-body">
-    <p><?= $OSCOM_PayPal->getDef('error_no_accounts_configured') ?></p>
+    <p><?= $PayPal->getDef('error_no_accounts_configured') ?></p>
   </div>
 </div>
 
 <script>
-OSCOM.APP.PAYPAL.getBalance = function(type) {
+Phoenix.APP.PAYPAL.getBalance = function(type) {
   var def = {
-    'error_balance_retrieval': '<?= addslashes($OSCOM_PayPal->getDef('error_balance_retrieval')) ?>'
+    'error_balance_retrieval': '<?= addslashes($PayPal->getDef('error_balance_retrieval')) ?>'
   };
 
   var divId = 'ppBalance' + type.charAt(0).toUpperCase() + type.slice(1) + 'Info';
@@ -91,7 +91,7 @@ OSCOM.APP.PAYPAL.getBalance = function(type) {
     for ( var key in balance ) {
       pass = true;
 
-      $('#' + divId).append('<p><strong>' + OSCOM.htmlSpecialChars(key) + ':</strong> ' + OSCOM.htmlSpecialChars(balance[key]) + '</p>');
+      $('#' + divId).append('<p><strong>' + Phoenix.htmlSpecialChars(key) + ':</strong> ' + Phoenix.htmlSpecialChars(balance[key]) + '</p>');
     }
 
     if ( pass == false ) {
@@ -106,11 +106,11 @@ $(function() {
   (function() {
     var pass = false;
 
-    for ( var key in OSCOM.APP.PAYPAL.accountTypes ) {
-      if ( OSCOM.APP.PAYPAL.accountTypes[key] == true ) {
+    for ( var key in Phoenix.APP.PAYPAL.accountTypes ) {
+      if ( Phoenix.APP.PAYPAL.accountTypes[key] == true ) {
         pass = true;
 
-        OSCOM.APP.PAYPAL.getBalance(key);
+        Phoenix.APP.PAYPAL.getBalance(key);
       } else {
         $('#ppAccountBalance' + key.charAt(0).toUpperCase() + key.slice(1)).hide();
       }

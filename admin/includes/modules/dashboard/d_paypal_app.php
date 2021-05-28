@@ -10,8 +10,8 @@
   Released under the GNU General Public License
 */
 
-  if ( !class_exists('OSCOM_PayPal') ) {
-    include DIR_FS_CATALOG . 'includes/apps/paypal/OSCOM_PayPal.php';
+  if ( !class_exists('PayPal') ) {
+    include DIR_FS_CATALOG . 'includes/apps/paypal/PayPal.php';
   }
 
   class d_paypal_app extends abstract_module {
@@ -24,7 +24,7 @@
     public function __construct() {
       parent::__construct();
 
-      $this->_app = new OSCOM_PayPal();
+      $this->_app = new PayPal();
       $this->_app->loadLanguageFile('admin/balance.php');
       $this->_app->loadLanguageFile('admin/modules/dashboard/d_paypal_app.php');
 
@@ -42,7 +42,7 @@
       $Admin =& Guarantor::ensure_global('Admin');
 
       $version = $this->_app->getVersion();
-      $version_check_result = defined('OSCOM_APP_PAYPAL_VERSION_CHECK') ? '"' . OSCOM_APP_PAYPAL_VERSION_CHECK . '"' : 'undefined';
+      $version_check_result = defined('PAYPAL_APP_VERSION_CHECK') ? '"' . PAYPAL_APP_VERSION_CHECK . '"' : 'undefined';
       $can_apply_online_updates = 'false';
       $has_live_account = ($this->_app->hasApiCredentials('live') === true) ? 'true' : 'false';
       $has_sandbox_account = ($this->_app->hasApiCredentials('sandbox') === true) ? 'true' : 'false';
@@ -73,7 +73,7 @@ if ( typeof jQuery == 'undefined' ) {
 }
 </script>
 <script>
-var OSCOM = {
+var Phoenix = {
   dateNow: new Date(),
   htmlSpecialChars: function(string) {
     if ( string == null ) {
@@ -132,7 +132,7 @@ var OSCOM = {
 </div>
 
 <script>
-OSCOM.APP.PAYPAL.getBalance = function(type) {
+Phoenix.APP.PAYPAL.getBalance = function(type) {
   var def = {
     'error_balance_retrieval': '{$error_balance_retrieval}'
   };
@@ -178,7 +178,7 @@ OSCOM.APP.PAYPAL.getBalance = function(type) {
     for ( var key in balance ) {
       pass = true;
 
-      $('#' + divId).append('<p><strong>' + OSCOM.htmlSpecialChars(key) + ':</strong> ' + OSCOM.htmlSpecialChars(balance[key]) + '</p>');
+      $('#' + divId).append('<p><strong>' + Phoenix.htmlSpecialChars(key) + ':</strong> ' + Phoenix.htmlSpecialChars(balance[key]) + '</p>');
     }
 
     if ( pass == false ) {
@@ -193,19 +193,19 @@ $(function() {
   (function() {
     var pass = false;
 
-    if ( OSCOM.APP.PAYPAL.accountTypes['live'] == true ) {
+    if ( Phoenix.APP.PAYPAL.accountTypes['live'] == true ) {
       pass = true;
 
       $('#ppAccountBalanceSandbox').hide();
 
-      OSCOM.APP.PAYPAL.getBalance('live');
+      Phoenix.APP.PAYPAL.getBalance('live');
     } else {
       $('#ppAccountBalanceLive').hide();
 
-      if ( OSCOM.APP.PAYPAL.accountTypes['sandbox'] == true ) {
+      if ( Phoenix.APP.PAYPAL.accountTypes['sandbox'] == true ) {
         pass = true;
 
-        OSCOM.APP.PAYPAL.getBalance('sandbox');
+        Phoenix.APP.PAYPAL.getBalance('sandbox');
       } else {
         $('#ppAccountBalanceSandbox').hide();
       }
@@ -229,7 +229,7 @@ EOJS;
           'title' => 'Content Width',
           'value' => '6',
           'desc' => 'What width container should the content be shown in? (12 = full width, 6 = half width).',
-          'set_func' => "tep_cfg_select_option(['12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1'], ",
+          'set_func' => "Config::select_one(['12', '11', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1'], ",
         ],
         'MODULE_ADMIN_DASHBOARD_PAYPAL_APP_SORT_ORDER' => [
           'title' => 'Sort Order',

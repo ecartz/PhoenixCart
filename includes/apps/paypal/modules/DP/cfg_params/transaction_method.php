@@ -10,30 +10,30 @@
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_DP_Cfg_transaction_method {
+  class PayPal_DP_Cfg_transaction_method {
     var $default = '1';
     var $title;
     var $description;
     var $sort_order = 300;
 
     function __construct() {
-      global $OSCOM_PayPal;
+      global $PayPal;
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_dp_transaction_method_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_dp_transaction_method_desc');
+      $this->title = $PayPal->getDef('cfg_dp_transaction_method_title');
+      $this->description = $PayPal->getDef('cfg_dp_transaction_method_desc');
     }
 
     function getSetField() {
-      global $OSCOM_PayPal;
+      global $PayPal;
 
       $input = null;
       $input .= '<div class="custom-control custom-radio custom-control-inline">';
-        $input .= '<input type="radio" class="custom-control-input" id="transactionMethodSelectionAuthorize" name="transaction_method" value="0"' . (OSCOM_APP_PAYPAL_DP_TRANSACTION_METHOD == '0' ? ' checked="checked"' : '') . '>';
-        $input .= '<label class="custom-control-label" for="transactionMethodSelectionAuthorize">' . $OSCOM_PayPal->getDef('cfg_dp_transaction_method_authorize') . '</label>';
+        $input .= '<input type="radio" class="custom-control-input" id="transactionMethodSelectionAuthorize" name="transaction_method" value="0"' . (PAYPAL_APP_DP_TRANSACTION_METHOD == '0' ? ' checked="checked"' : '') . '>';
+        $input .= '<label class="custom-control-label" for="transactionMethodSelectionAuthorize">' . $PayPal->getDef('cfg_dp_transaction_method_authorize') . '</label>';
       $input .= '</div>';
       $input .= '<div class="custom-control custom-radio custom-control-inline">';
-        $input .= '<input type="radio" class="custom-control-input" id="transactionMethodSelectionSale" name="transaction_method" value="1"' . (OSCOM_APP_PAYPAL_DP_TRANSACTION_METHOD == '1' ? ' checked="checked"' : '') . '>';
-        $input .= '<label class="custom-control-label" for="transactionMethodSelectionSale">' . $OSCOM_PayPal->getDef('cfg_dp_transaction_method_sale') . '</label>';
+        $input .= '<input type="radio" class="custom-control-input" id="transactionMethodSelectionSale" name="transaction_method" value="1"' . (PAYPAL_APP_DP_TRANSACTION_METHOD == '1' ? ' checked="checked"' : '') . '>';
+        $input .= '<label class="custom-control-label" for="transactionMethodSelectionSale">' . $PayPal->getDef('cfg_dp_transaction_method_sale') . '</label>';
       $input .= '</div>';
 
       $result = <<<EOT

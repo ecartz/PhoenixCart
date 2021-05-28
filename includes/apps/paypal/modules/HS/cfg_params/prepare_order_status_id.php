@@ -2,78 +2,74 @@
 /*
   $Id$
 
-  osCommerce, Open Source E-Commerce Solutions
-  http://www.oscommerce.com
+  CE Phoenix, E-Commerce made Easy
+  https://phoenixcart.org
 
-  Copyright (c) 2014 osCommerce
+  Copyright (c) 2021 Phoenix Cart
 
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_HS_Cfg_prepare_order_status_id {
-    var $default = '0';
-    var $title;
-    var $description;
-    var $sort_order = 300;
+  class PayPal_HS_Cfg_prepare_order_status_id {
 
-    function __construct() {
-      global $OSCOM_PayPal;
+    public $default = '0';
+    public $title;
+    public $description;
+    public $sort_order = 300;
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_hs_prepare_order_status_id_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_hs_prepare_order_status_id_desc');
+    public function __construct() {
+      global $PayPal;
 
-      if ( !defined('OSCOM_APP_PAYPAL_HS_PREPARE_ORDER_STATUS_ID') ) {
-        $check_query = tep_db_query("select orders_status_id from orders_status where orders_status_name = 'Preparing [PayPal Pro HS]' limit 1");
-
-        if (tep_db_num_rows($check_query) < 1) {
-          $status_query = tep_db_query("select max(orders_status_id) as status_id from orders_status");
-          $status = tep_db_fetch_array($status_query);
-
-          $status_id = $status['status_id']+1;
-
-          $languages = tep_get_languages();
-
-          foreach ($languages as $lang) {
-            tep_db_query("insert into orders_status (orders_status_id, language_id, orders_status_name) values ('" . $status_id . "', '" . $lang['id'] . "', 'Preparing [PayPal Pro HS]')");
-          }
-
-          $flags_query = tep_db_query("describe orders_status public_flag");
-          if (tep_db_num_rows($flags_query) == 1) {
-            tep_db_query("update orders_status set public_flag = 0 and downloads_flag = 0 where orders_status_id = '" . $status_id . "'");
-          }
-        } else {
-          $check = tep_db_fetch_array($check_query);
-
-          $status_id = $check['orders_status_id'];
-        }
-      } else {
-        $status_id = OSCOM_APP_PAYPAL_HS_PREPARE_ORDER_STATUS_ID;
-      }
-
-      $this->default = $status_id;
+      $this->title = $PayPal->getDef('cfg_hs_prepare_order_status_id_title');
+      $this->description = $PayPal->getDef('cfg_hs_prepare_order_status_id_desc');
+      $this->default = $this->determine_status_id();
     }
 
-    function getSetField() {
-      global $OSCOM_PayPal;
-
-      $statuses_array = array(array('id' => '0', 'text' => $OSCOM_PayPal->getDef('cfg_hs_prepare_order_status_id_default')));
-
-      $statuses_query = tep_db_query("select orders_status_id, orders_status_name from orders_status where language_id = '" . (int)$_SESSION['languages_id'] . "' order by orders_status_name");
-      while ($statuses = tep_db_fetch_array($statuses_query)) {
-        $statuses_array[] = array('id' => $statuses['orders_status_id'],
-                                  'text' => $statuses['orders_status_name']);
+    public function determine_status_id() {
+      if ( defined('PAYPAL_APP_HS_PREPARE_ORDER_STATUS_ID') ) {
+        return PAYPAL_APP_HS_PREPARE_ORDER_STATUS_ID;
       }
 
-      $input = tep_draw_pull_down_menu('prepare_order_status_id', $statuses_array, OSCOM_APP_PAYPAL_HS_PREPARE_ORDER_STATUS_ID, 'id="inputHsPrepareOrderStatusId"');
+      $check_query = $GLOBALS['db']->query("SELECT orders_status_id FROM orders_status WHERE orders_status_name = 'Preparing [PayPal Pro HS]' LIMIT 1");
+      if ($check = $check_query->fetch_assoc()) {
+        return $check['orders_status_id'];
+      }
 
-      $result = <<<EOT
+      $status = $GLOBALS['db']->query("SELECT MAX(orders_status_id) + 1 AS id FROM orders_status")->fetch_assoc();
+
+      $sql_data = [
+        'orders_status_id' => (int)$status['id'],
+        'orders_status_name' => 'Preparing [PayPal Pro HS]',
+        'public_flag' => 0,
+        'downloads_flag' => 0,
+      ];
+
+      foreach (language::load_all() as $language) {
+        $sql_data['language_id'] = (int)$language['id'];
+        $GLOBALS['db']->perform('orders_status', $sql_data);
+      }
+
+      return $status['id'];
+    }
+
+    public function getSetField() {
+      global $PayPal;
+
+      $statuses = array_merge([['id' => '0', 'text' => $PayPal->getDef('cfg_hs_prepare_order_status_id_default')]],
+        $GLOBALS['db']->fetch_all(sprintf(<<<'EOSQL'
+SELECT orders_status_id AS id, orders_status_name AS `text` FROM orders_status WHERE language_id = %d ORDER BY orders_status_name
+EOSQL
+        , (int)$_SESSION['languages_id'])));
+
+      $input = new Select('prepare_order_status_id', $statuses, ['id' => 'inputHsPrepareOrderStatusId']);
+      $input->set_selection(PAYPAL_APP_HS_PREPARE_ORDER_STATUS_ID);
+
+      return <<<"EOHTML"
 <h5>{$this->title}</h5>
 <p>{$this->description}</p>
 
 <div class="mb-3">{$input}</div>
-EOT;
-
-      return $result;
+EOHTML;
     }
+
   }
-?>

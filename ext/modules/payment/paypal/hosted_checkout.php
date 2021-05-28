@@ -13,11 +13,9 @@
   chdir('../../../../');
   require 'includes/application_top.php';
 
-  include DIR_FS_CATALOG . 'includes/apps/paypal/functions/compatibility.php';
-
   $error = false;
 
-  if ( !defined('OSCOM_APP_PAYPAL_HS_STATUS') || !in_array(OSCOM_APP_PAYPAL_HS_STATUS, ['1', '0']) ) {
+  if ( !defined('PAYPAL_APP_HS_STATUS') || !in_array(PAYPAL_APP_HS_STATUS, ['1', '0']) ) {
     $error = true;
   }
 
@@ -36,14 +34,14 @@
   }
 
   if ( $error === false ) {
-    if ( OSCOM_APP_PAYPAL_HS_STATUS == '1' ) {
+    if ( PAYPAL_APP_HS_STATUS == '1' ) {
       $form_url = 'https://securepayments.paypal.com/webapps/HostedSoleSolutionApp/webflow/sparta/hostedSoleSolutionProcess';
     } else {
       $form_url = 'https://securepayments.sandbox.paypal.com/webapps/HostedSoleSolutionApp/webflow/sparta/hostedSoleSolutionProcess';
     }
   } else {
-    $form_url = tep_href_link('checkout_payment.php', 'payment_error=paypal_pro_hs', 'SSL');
+    $form_url = $Linker->build('checkout_payment.php', ['payment_error' => 'paypal_pro_hs']);
   }
 
-  require $oscTemplate->map_to_template(__FILE__, 'ext');
-  require(DIR_FS_CATALOG . 'includes/application_bottom.php');
+  require $Template->map(__FILE__, 'ext');
+  require DIR_FS_CATALOG . 'includes/application_bottom.php';

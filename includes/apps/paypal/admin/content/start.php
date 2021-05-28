@@ -15,20 +15,23 @@
   <div class="col mb-4">
     <div class="card">
       <div class="card-header">
-        <?php echo $OSCOM_PayPal->getDef('onboarding_intro_title'); ?>
+        <?= $PayPal->getDef('onboarding_intro_title') ?>
       </div>
       <div class="card-body">
-        <?= $OSCOM_PayPal->getDef('onboarding_intro_body', array('button_retrieve_live_credentials' => $OSCOM_PayPal->drawButton($OSCOM_PayPal->getDef('button_retrieve_live_credentials'), tep_href_link('paypal.php', 'action=start&subaction=process&type=live'), 'info'), 'button_retrieve_sandbox_credentials' => $OSCOM_PayPal->drawButton($OSCOM_PayPal->getDef('button_retrieve_sandbox_credentials'), tep_href_link('paypal.php', 'action=start&subaction=process&type=sandbox'), 'info'))); ?>
+        <?= $PayPal->getDef('onboarding_intro_body', [
+          'button_retrieve_live_credentials' => $PayPal->drawButton($PayPal->getDef('button_retrieve_live_credentials'), Guarantor::ensure_global('Admin')->link('paypal.php', ['action' => 'start', 'subaction' => 'process', 'type' => 'live']), 'info'),
+          'button_retrieve_sandbox_credentials' => $PayPal->drawButton($PayPal->getDef('button_retrieve_sandbox_credentials'), Guarantor::ensure_global('Admin')->link('paypal.php', ['action' => 'start', 'subaction' => 'process', 'type' => 'sandbox']), 'info')]) ?>
       </div>
     </div>
   </div>
   <div class="col mb-4">
     <div class="card">
       <div class="card-header">
-        <?= $OSCOM_PayPal->getDef('manage_credentials_title'); ?>
+        <?= $PayPal->getDef('manage_credentials_title') ?>
       </div>
       <div class="card-body">
-        <?= $OSCOM_PayPal->getDef('manage_credentials_body', array('button_manage_credentials' => $OSCOM_PayPal->drawButton($OSCOM_PayPal->getDef('button_manage_credentials'), tep_href_link('paypal.php', 'action=credentials'), 'warning'))); ?> 
+        <?= $PayPal->getDef('manage_credentials_body', [
+          'button_manage_credentials' => $PayPal->drawButton($PayPal->getDef('button_manage_credentials'), Guarantor::ensure_global('Admin')->link('paypal.php', ['action' => 'credentials']), 'warning')]) ?>
       </div>
     </div>
   </div>

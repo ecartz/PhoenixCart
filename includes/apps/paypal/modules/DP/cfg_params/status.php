@@ -10,7 +10,7 @@
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_DP_Cfg_status {
+  class PayPal_DP_Cfg_status {
 
     public $default = '1';
     public $title;
@@ -18,26 +18,26 @@
     public $sort_order = 100;
 
     function __construct() {
-      global $OSCOM_PayPal;
+      global $PayPal;
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_dp_status_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_dp_status_desc');
+      $this->title = $PayPal->getDef('cfg_dp_status_title');
+      $this->description = $PayPal->getDef('cfg_dp_status_desc');
     }
 
     function getSetField() {
-      global $OSCOM_PayPal;
+      global $PayPal;
 
       $input = '<div class="custom-control custom-radio custom-control-inline">';
-        $input .= '<input type="radio" class="custom-control-input" id="statusSelectionLive" name="status" value="1"' . (OSCOM_APP_PAYPAL_DP_STATUS == '1' ? ' checked="checked"' : '') . '>';
-        $input .= '<label class="custom-control-label" for="statusSelectionLive">' . $OSCOM_PayPal->getDef('cfg_dp_status_live') . '</label>';
+        $input .= '<input type="radio" class="custom-control-input" id="statusSelectionLive" name="status" value="1"' . (PAYPAL_APP_DP_STATUS == '1' ? ' checked="checked"' : '') . '>';
+        $input .= '<label class="custom-control-label" for="statusSelectionLive">' . $PayPal->getDef('cfg_dp_status_live') . '</label>';
       $input .= '</div>';
       $input .= '<div class="custom-control custom-radio custom-control-inline">';
-        $input .= '<input type="radio" class="custom-control-input" id="statusSelectionSandbox" name="status" value="0"' . (OSCOM_APP_PAYPAL_DP_STATUS == '0' ? ' checked="checked"' : '') . '>';
-        $input .= '<label class="custom-control-label" for="statusSelectionSandbox">' . $OSCOM_PayPal->getDef('cfg_dp_status_sandbox') . '</label>';
+        $input .= '<input type="radio" class="custom-control-input" id="statusSelectionSandbox" name="status" value="0"' . (PAYPAL_APP_DP_STATUS == '0' ? ' checked="checked"' : '') . '>';
+        $input .= '<label class="custom-control-label" for="statusSelectionSandbox">' . $PayPal->getDef('cfg_dp_status_sandbox') . '</label>';
       $input .= '</div>';
       $input .= '<div class="custom-control custom-radio custom-control-inline">';
-        $input .= '<input type="radio" class="custom-control-input" id="statusSelectionDisabled" name="status" value="-1"' . (OSCOM_APP_PAYPAL_DP_STATUS == '-1' ? ' checked="checked"' : '') . '>';
-        $input .= '<label class="custom-control-label" for="statusSelectionDisabled">' . $OSCOM_PayPal->getDef('cfg_dp_status_disabled') . '</label>';
+        $input .= '<input type="radio" class="custom-control-input" id="statusSelectionDisabled" name="status" value="-1"' . (PAYPAL_APP_DP_STATUS == '-1' ? ' checked="checked"' : '') . '>';
+        $input .= '<label class="custom-control-label" for="statusSelectionDisabled">' . $PayPal->getDef('cfg_dp_status_disabled') . '</label>';
       $input .= '</div>';
 
       $result = <<<EOT
@@ -49,4 +49,5 @@ EOT;
 
       return $result;
     }
+
   }

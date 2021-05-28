@@ -10,7 +10,8 @@
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_LOGIN_Cfg_attributes {
+  class PayPal_LOGIN_Cfg_attributes {
+
     public $default = ''; // set in classs constructor
     public $title;
     public $description;
@@ -55,35 +56,34 @@
       'zip_code',
     ];
 
-    function __construct() {
-      global $OSCOM_PayPal;
+    public function __construct() {
+      global $PayPal;
 
       $this->default = implode(';', $this->getAttributes());
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_login_attributes_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_login_attributes_desc');
+      $this->title = $PayPal->getDef('cfg_login_attributes_title');
+      $this->description = $PayPal->getDef('cfg_login_attributes_desc');
     }
 
-    function getSetField() {
-      global $OSCOM_PayPal;
+    public function getSetField() {
+      global $PayPal;
 
-      $values_array = explode(';', OSCOM_APP_PAYPAL_LOGIN_ATTRIBUTES);
+      $values_array = explode(';', PAYPAL_APP_LOGIN_ATTRIBUTES);
 
-      $input = null;
-
+      $input = '';
       foreach ( $this->attributes as $group => $attributes ) {
-        $input .= '<h6 class="mt-2 mb-0">' . $OSCOM_PayPal->getDef('cfg_login_attributes_group_' . $group) . '</h6>';
+        $input .= '<h6 class="mt-2 mb-0">' . $PayPal->getDef('cfg_login_attributes_group_' . $group) . '</h6>';
 
         foreach ( $attributes as $attribute => $scope ) {
           if ( in_array($attribute, $this->required) ) {
             $input .= '<div class="custom-control custom-radio custom-control-inline">';
               $input .= '<input type="radio" class="custom-control-input" id="ppLogInAttributesSelection' . ucfirst($attribute) . '" name="ppLogInAttributesTmp' . ucfirst($attribute) . '" value="' . $attribute . '" checked="checked" />';
-              $input .= '<label class="custom-control-label" for="ppLogInAttributesSelection' . ucfirst($attribute) . '">' . $OSCOM_PayPal->getDef('cfg_login_attributes_attribute_' . $attribute) . '</label>';
+              $input .= '<label class="custom-control-label" for="ppLogInAttributesSelection' . ucfirst($attribute) . '">' . $PayPal->getDef('cfg_login_attributes_attribute_' . $attribute) . '</label>';
             $input .= '</div>';
           } else {
             $input .= '<div class="custom-control custom-checkbox custom-control-inline">';
               $input .= '<input type="checkbox" class="custom-control-input" id="ppLogInAttributesSelection' . ucfirst($attribute) . '" name="ppLogInAttributes[]" value="' . $attribute . '"' . (in_array($attribute, $values_array) ? ' checked="checked"' : '') . ' />';
-              $input .= '<label class="custom-control-label" for="ppLogInAttributesSelection' . ucfirst($attribute) . '">' . $OSCOM_PayPal->getDef('cfg_login_attributes_attribute_' . $attribute) . '</label>';
+              $input .= '<label class="custom-control-label" for="ppLogInAttributesSelection' . ucfirst($attribute) . '">' . $PayPal->getDef('cfg_login_attributes_attribute_' . $attribute) . '</label>';
             $input .= '</div>';
           }
         }
@@ -91,7 +91,7 @@
 
       $input .= '<input type="hidden" name="attributes" value="" />';
 
-      $result = <<<EOT
+      return <<<"EOHTML"
 <h5>{$this->title}</h5>
 <p>{$this->description}</p>
 
@@ -130,18 +130,15 @@ $(function() {
   }
 });
 </script>
-EOT;
+EOHTML;
 
       return $result;
     }
 
-    function getAttributes() {
+    public function getAttributes() {
       $data = [];
-
-      foreach ( $this->attributes as $group => $attributes ) {
-        foreach ( $attributes as $attribute => $scope ) {
-          $data[] = $attribute;
-        }
+      foreach ( $this->attributes as $attributes ) {
+        array_push($data, ...array_keys($attributes));
       }
 
       return $data;

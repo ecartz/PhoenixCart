@@ -10,42 +10,40 @@
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_Cfg_log_transactions {
-    var $default = '1';
-    var $sort_order = 500;
+  class PayPal_Cfg_log_transactions {
 
-    function __construct() {
-      global $OSCOM_PayPal;
+    public $default = '1';
+    public $sort_order = 500;
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_log_transactions_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_log_transactions_desc');
+    public function __construct() {
+      global $PayPal;
+
+      $this->title = $PayPal->getDef('cfg_log_transactions_title');
+      $this->description = $PayPal->getDef('cfg_log_transactions_desc');
     }
 
-    function getSetField() {
-      global $OSCOM_PayPal;
-      
-      $input = null;      
-      $input .= '<div class="custom-control custom-radio custom-control-inline">';
-        $input .= '<input type="radio" class="custom-control-input" id="logTransactionsSelectionAll" name="log_transactions" value="1"' . (OSCOM_APP_PAYPAL_LOG_TRANSACTIONS == '1' ? ' checked="checked"' : '') . '>';
-        $input .= '<label class="custom-control-label" for="logTransactionsSelectionAll">' . $OSCOM_PayPal->getDef('cfg_log_transactions_all') . '</label>';
+    public function getSetField() {
+      global $PayPal;
+
+      $input  = '<div class="custom-control custom-radio custom-control-inline">';
+        $input .= '<input type="radio" class="custom-control-input" id="logTransactionsSelectionAll" name="log_transactions" value="1"' . (PAYPAL_APP_LOG_TRANSACTIONS == '1' ? ' checked="checked"' : '') . '>';
+        $input .= '<label class="custom-control-label" for="logTransactionsSelectionAll">' . $PayPal->getDef('cfg_log_transactions_all') . '</label>';
       $input .= '</div>';
       $input .= '<div class="custom-control custom-radio custom-control-inline">';
-        $input .= '<input type="radio" class="custom-control-input" id="logTransactionsSelectionErrors" name="log_transactions" value="0"' . (OSCOM_APP_PAYPAL_LOG_TRANSACTIONS == '0' ? ' checked="checked"' : '') . '>';
-        $input .= '<label class="custom-control-label" for="logTransactionsSelectionErrors">' . $OSCOM_PayPal->getDef('cfg_log_transactions_errors') . '</label>';
+        $input .= '<input type="radio" class="custom-control-input" id="logTransactionsSelectionErrors" name="log_transactions" value="0"' . (PAYPAL_APP_LOG_TRANSACTIONS == '0' ? ' checked="checked"' : '') . '>';
+        $input .= '<label class="custom-control-label" for="logTransactionsSelectionErrors">' . $PayPal->getDef('cfg_log_transactions_errors') . '</label>';
       $input .= '</div>';
       $input .= '<div class="custom-control custom-radio custom-control-inline">';
-        $input .= '<input type="radio" class="custom-control-input" id="logTransactionsSelectionDisabled" name="log_transactions" value="-1"' . (OSCOM_APP_PAYPAL_LOG_TRANSACTIONS == '-1' ? ' checked="checked"' : '') . '>';
-        $input .= '<label class="custom-control-label" for="logTransactionsSelectionDisabled">' . $OSCOM_PayPal->getDef('cfg_log_transactions_disabled') . '</label>';
+        $input .= '<input type="radio" class="custom-control-input" id="logTransactionsSelectionDisabled" name="log_transactions" value="-1"' . (PAYPAL_APP_LOG_TRANSACTIONS == '-1' ? ' checked="checked"' : '') . '>';
+        $input .= '<label class="custom-control-label" for="logTransactionsSelectionDisabled">' . $PayPal->getDef('cfg_log_transactions_disabled') . '</label>';
       $input .= '</div>';
 
-      $result = <<<EOT
+      return <<<"EOHTML"
 <h5>{$this->title}</h5>
 <p>{$this->description}</p>
 
 <div id="logSelection">{$input}</div>
-EOT;
-
-      return $result;
+EOHTML;
     }
+
   }
-?>

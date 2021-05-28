@@ -10,8 +10,8 @@
   Released under the GNU General Public License
 */
 
-  if ( !class_exists('OSCOM_PayPal') ) {
-    require DIR_FS_CATALOG . 'includes/apps/paypal/OSCOM_PayPal.php';
+  if ( !class_exists('PayPal') ) {
+    require DIR_FS_CATALOG . 'includes/apps/paypal/PayPal.php';
   }
 
   class cm_paypal_login {
@@ -36,7 +36,7 @@
     public $_app;
 
     public function __construct() {
-      $this->_app = new OSCOM_PayPal();
+      $this->_app = new PayPal();
       $this->_app->loadLanguageFile('modules/LOGIN/LOGIN.php');
 
       $this->signature = 'paypal|paypal_login|4.0|2.3';
@@ -45,13 +45,14 @@
       $this->group = basename(dirname(__FILE__));
 
       $this->title = $this->_app->getDef('module_login_title');
-      $this->description = '<div align="center">' . $this->_app->drawButton($this->_app->getDef('module_login_legacy_admin_app_button'), tep_href_link('paypal.php', 'action=configure&module=LOGIN'), 'primary', null, true) . '</div>';
+      $link = isset($GLOBALS['Admin']) ? $GLOBALS['Admin']->link('paypal.php', 'action=configure&module=LOGIN') : '';
+      $this->description = '<div align="center">' . $this->_app->drawButton($this->_app->getDef('module_login_legacy_admin_app_button'), $link, 'primary', null, true) . '</div>';
 
-      if ( defined('OSCOM_APP_PAYPAL_LOGIN_STATUS') ) {
-        $this->sort_order = (defined('OSCOM_APP_PAYPAL_LOGIN_SORT_ORDER') ? OSCOM_APP_PAYPAL_LOGIN_SORT_ORDER : 0);
-        $this->enabled = in_array(OSCOM_APP_PAYPAL_LOGIN_STATUS, ['1', '0']);
+      if ( defined('PAYPAL_APP_LOGIN_STATUS') ) {
+        $this->sort_order = (defined('PAYPAL_APP_LOGIN_SORT_ORDER') ? PAYPAL_APP_LOGIN_SORT_ORDER : 0);
+        $this->enabled = in_array(PAYPAL_APP_LOGIN_STATUS, ['1', '0']);
 
-        if ( OSCOM_APP_PAYPAL_LOGIN_STATUS == '0' ) {
+        if ( PAYPAL_APP_LOGIN_STATUS == '0' ) {
           $this->title .= ' [Sandbox]';
         }
 
@@ -61,12 +62,13 @@
           $this->enabled = false;
         }
 
-        if ( $this->enabled === true ) {
-          if ( ((OSCOM_APP_PAYPAL_LOGIN_STATUS == '1') && (Text::is_empty(OSCOM_APP_PAYPAL_LOGIN_LIVE_CLIENT_ID) || Text::is_empty(OSCOM_APP_PAYPAL_LOGIN_LIVE_SECRET))) || ((OSCOM_APP_PAYPAL_LOGIN_STATUS == '0') && (Text::is_empty(OSCOM_APP_PAYPAL_LOGIN_SANDBOX_CLIENT_ID) || Text::is_empty(OSCOM_APP_PAYPAL_LOGIN_SANDBOX_SECRET))) ) {
-            $this->description .= '<div class="alert alert-warning">' . $this->_app->getDef('module_login_error_credentials') . '</div>';
+        if ( ( $this->enabled === true ) && ((PAYPAL_APP_LOGIN_STATUS == '1')
+            && (Text::is_empty(PAYPAL_APP_LOGIN_LIVE_CLIENT_ID) || Text::is_empty(PAYPAL_APP_LOGIN_LIVE_SECRET)))
+            || ((PAYPAL_APP_LOGIN_STATUS == '0') && (Text::is_empty(PAYPAL_APP_LOGIN_SANDBOX_CLIENT_ID) || Text::is_empty(PAYPAL_APP_LOGIN_SANDBOX_SECRET))) )
+        {
+          $this->description .= '<div class="alert alert-warning">' . $this->_app->getDef('module_login_error_credentials') . '</div>';
 
-            $this->enabled = false;
-          }
+          $this->enabled = false;
         }
       }
     }
@@ -82,7 +84,7 @@
 
       $use_scopes = ['openid'];
 
-      foreach ( explode(';', OSCOM_APP_PAYPAL_LOGIN_ATTRIBUTES) as $attribute ) {
+      foreach ( explode(';', PAYPAL_APP_LOGIN_ATTRIBUTES) as $attribute ) {
         foreach ( $this->get_attributes() as $group => $scopes ) {
           if ( isset($scopes[$attribute]) && !in_array($scopes[$attribute], $use_scopes) ) {
             $use_scopes[] = $scopes[$attribute];
@@ -98,7 +100,7 @@
 
     public function guarantee_address($customer_id, $address) {
       $address['id'] = $customer_id;
-      $check_query = tep_db_query($GLOBALS['customer_data']->build_read(['address_book_id'], 'address_book', $address) . " LIMIT 1");
+      $check_query = $GLOBALS['db']->query($GLOBALS['customer_data']->build_read(['address_book_id'], 'address_book', $address) . " LIMIT 1");
       if ($check = $check_query->fetch_assoc()) {
         $_SESSION['sendto'] = $check['address_book_id'];
       } else {
@@ -109,14 +111,14 @@
     public function preLogin() {
       global $customer_data;
 
-      $return_url = tep_href_link('login.php');
+      $return_url = $GLOBALS['Linker']->build('login.php');
 
       if ( isset($_GET['code']) ) {
         $_SESSION['paypal_login_customer_id'] = false;
 
         $params = [
           'code' => $_GET['code'],
-          'redirect_uri' => str_replace('&amp;', '&', tep_href_link('login.php', 'action=paypal_login')),
+          'redirect_uri' => str_replace('&amp;', '&', $GLOBALS['Linker']->build('login.php', 'action=paypal_login')),
         ];
 
         $response_token = $this->_app->getApiResult('LOGIN', 'GrantToken', $params);
@@ -148,15 +150,19 @@
               'address_format_id' => 1,
             ];
 
-            $country_query = tep_db_query("SELECT countries_id, address_format_id FROM countries WHERE countries_iso_code_2 = '" . tep_db_input($customer_details['country_iso_code_2']) . "' LIMIT 1");
-            if ($country = $country_query->fetch_assoc()) {
+            $country = $GLOBALS['db']->query(sprintf("SELECT countries_id, address_format_id FROM countries WHERE countries_iso_code_2 = '%s' LIMIT 1",
+              $GLOBALS['db']->escape($customer_details['country_iso_code_2'])))->fetch_assoc();
+            if ($country) {
               $customer_details['country_id'] = $country['countries_id'];
               $customer_details['address_format_id'] = $country['address_format_id'];
             }
 
             if ($customer_details['country_id'] > 0) {
-              $zone_query = tep_db_query("SELECT zone_id FROM zones WHERE zone_country_id = '" . (int)$customer_details['country_id'] . "' AND (zone_name = '" . tep_db_input($customer_details['zone']) . "' or zone_code = '" . tep_db_input($customer_details['zone']) . "') LIMIT 1");
-              if ($zone = $zone_query->fetch_assoc()) {
+              $zone = $GLOBALS['db']->query(sprintf("SELECT zone_id FROM zones WHERE zone_country_id = %d AND (zone_name = '%s' or zone_code = '%s') LIMIT 1",
+                (int)$customer_details['country_id'],
+                $GLOBALS['db']->escape($customer_details['zone']),
+                $GLOBALS['db']->escape($customer_details['zone'])))->fetch_assoc();
+              if ($zone) {
                 $customer_details['zone_id'] = $zone['zone_id'];
               }
             }
@@ -168,7 +174,7 @@
 // check if e-mail address exists in database and log in or create customer account
               $email_address = Text::input($response['email']);
 
-              $check_query = tep_db_query($customer_data->build_read(['id'], 'customers', ['email_address' => $email_address]) . ' LIMIT 1');
+              $check_query = $GLOBALS['db']->query($customer_data->build_read(['id'], 'customers', ['email_address' => $email_address]) . ' LIMIT 1');
               if ($check = $check_query->fetch_assoc()) {
                 $_SESSION['paypal_login_customer_id'] = (int)$customer_data->get('id', $check);
                 $this->guarantee_address($_SESSION['paypal_login_customer_id'], $customer_details);
@@ -200,7 +206,7 @@
 
             $_SESSION['billto'] = $_SESSION['sendto'];
 
-            $return_url = tep_href_link('login.php', 'action=paypal_login_process');
+            $return_url = $GLOBALS['Linker']->build('login.php', 'action=paypal_login_process');
           }
         }
       }
@@ -237,23 +243,23 @@
     }
 
     public function check() {
-      return defined('OSCOM_APP_PAYPAL_LOGIN_STATUS');
+      return defined('PAYPAL_APP_LOGIN_STATUS');
     }
 
     public function install() {
-      tep_redirect(tep_href_link('paypal.php', 'action=configure&subaction=install&module=LOGIN'));
+      Href::redirect(Guarantor::ensure_global('')->link('paypal.php', 'action=configure&subaction=install&module=LOGIN'));
     }
 
     public function remove() {
-      tep_redirect(tep_href_link('paypal.php', 'action=configure&subaction=uninstall&module=LOGIN'));
+      Href::redirect(Guarantor::ensure_global('Admin')->link('paypal.php', 'action=configure&subaction=uninstall&module=LOGIN'));
     }
 
     public function keys() {
-      return ['OSCOM_APP_PAYPAL_LOGIN_CONTENT_WIDTH', 'OSCOM_APP_PAYPAL_LOGIN_SORT_ORDER'];
+      return ['PAYPAL_APP_LOGIN_CONTENT_WIDTH', 'PAYPAL_APP_LOGIN_SORT_ORDER'];
     }
 
     public function hasAttribute($attribute) {
-      return in_array($attribute, explode(';', OSCOM_APP_PAYPAL_LOGIN_ATTRIBUTES));
+      return in_array($attribute, explode(';', PAYPAL_APP_LOGIN_ATTRIBUTES));
     }
 
     public function get_default_attributes() {

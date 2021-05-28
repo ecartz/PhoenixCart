@@ -11,35 +11,45 @@
 */
 
   function app_paypal_get_admin_box_links() {
-    $paypal_menu = array(
-      array('code' => 'paypal.php',
-            'title' => MODULES_ADMIN_MENU_PAYPAL_START,
-            'link' => tep_href_link('paypal.php'))
-    );
+    $paypal_menu = [[
+      'code' => 'paypal.php',
+      'title' => MODULES_ADMIN_MENU_PAYPAL_START,
+      'link' => Guarantor::ensure_global('Admin')->link('paypal.php'),
+    ]];
 
-    $paypal_menu_check = array('OSCOM_APP_PAYPAL_LIVE_SELLER_EMAIL',
-                               'OSCOM_APP_PAYPAL_LIVE_API_USERNAME',
-                               'OSCOM_APP_PAYPAL_SANDBOX_SELLER_EMAIL',
-                               'OSCOM_APP_PAYPAL_SANDBOX_API_USERNAME',
-                               'OSCOM_APP_PAYPAL_PF_LIVE_VENDOR',
-                               'OSCOM_APP_PAYPAL_PF_SANDBOX_VENDOR');
+    $paypal_menu_check = [
+      'PAYPAL_APP_LIVE_SELLER_EMAIL',
+      'PAYPAL_APP_LIVE_API_USERNAME',
+      'PAYPAL_APP_SANDBOX_SELLER_EMAIL',
+      'PAYPAL_APP_SANDBOX_API_USERNAME',
+      'PAYPAL_APP_LIVE_PF_VENDOR',
+      'PAYPAL_APP_SANDBOX_PF_VENDOR',
+    ];
 
     foreach ( $paypal_menu_check as $value ) {
-      if ( defined($value) && tep_not_null(constant($value)) ) {
-        $paypal_menu = array(
-          array('code' => 'paypal.php',
-                'title' => MODULES_ADMIN_MENU_PAYPAL_BALANCE,
-                'link' => tep_href_link('paypal.php', 'action=balance')),
-          array('code' => 'paypal.php',
-                'title' => MODULES_ADMIN_MENU_PAYPAL_CONFIGURE,
-                'link' => tep_href_link('paypal.php', 'action=configure')),
-          array('code' => 'paypal.php',
-                'title' => MODULES_ADMIN_MENU_PAYPAL_MANAGE_CREDENTIALS,
-                'link' => tep_href_link('paypal.php', 'action=credentials')),
-          array('code' => 'paypal.php',
-                'title' => MODULES_ADMIN_MENU_PAYPAL_LOG,
-                'link' => tep_href_link('paypal.php', 'action=log'))
-        );
+      if ( defined($value) && !Text::is_empty(constant($value)) ) {
+        $paypal_menu = [
+          [
+            'code' => 'paypal.php',
+            'title' => MODULES_ADMIN_MENU_PAYPAL_BALANCE,
+            'link' => $GLOBALS['Admin']->link('paypal.php', ['action' => 'balance']),
+          ],
+          [
+            'code' => 'paypal.php',
+            'title' => MODULES_ADMIN_MENU_PAYPAL_CONFIGURE,
+            'link' => $GLOBALS['Admin']->link('paypal.php', ['action' => 'configure']),
+          ],
+          [
+            'code' => 'paypal.php',
+            'title' => MODULES_ADMIN_MENU_PAYPAL_MANAGE_CREDENTIALS,
+            'link' => $GLOBALS['Admin']->link('paypal.php', ['action' => 'credentials']),
+          ],
+          [
+            'code' => 'paypal.php',
+            'title' => MODULES_ADMIN_MENU_PAYPAL_LOG,
+            'link' => $GLOBALS['Admin']->link('paypal.php', ['action' => 'log']),
+          ],
+        ];
 
         break;
       }
@@ -47,4 +57,3 @@
 
     return $paypal_menu;
   }
-?>

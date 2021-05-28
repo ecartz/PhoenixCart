@@ -13,7 +13,7 @@
   chdir('../../../../');
   require 'includes/application_top.php';
 
-  if ( !defined('OSCOM_APP_PAYPAL_HS_STATUS') || !in_array(OSCOM_APP_PAYPAL_HS_STATUS, ['1', '0']) ) {
+  if ( !defined('PAYPAL_APP_HS_STATUS') || !in_array(PAYPAL_APP_HS_STATUS, ['1', '0']) ) {
     exit;
   }
 
@@ -21,7 +21,7 @@
 
   if ( !empty($_POST['txn_id']) ) {
     $paypal_pro_hs = new paypal_pro_hs();
-    $result = $paypal_pro_hs->_app->getApiResult('APP', 'GetTransactionDetails', ['TRANSACTIONID' => $_POST['txn_id']], (OSCOM_APP_PAYPAL_HS_STATUS == '1') ? 'live' : 'sandbox', true);
+    $result = $paypal_pro_hs->_app->getApiResult('APP', 'GetTransactionDetails', ['TRANSACTIONID' => $_POST['txn_id']], (PAYPAL_APP_HS_STATUS == '1') ? 'live' : 'sandbox', true);
 
     if ( isset($result['ACK']) && (($result['ACK'] == 'Success') || ($result['ACK'] == 'SuccessWithWarning')) ) {
       $paypal_pro_hs->verifyTransaction($result, true);

@@ -10,22 +10,20 @@
   Released under the GNU General Public License
 */
 
-  function OSCOM_PayPal_DP_Api_PayflowPayment($OSCOM_PayPal, $server, $extra_params) {
-    if ( $server == 'live' ) {
-      $api_url = 'https://payflowpro.paypal.com';
-    } else {
-      $api_url = 'https://pilot-payflowpro.paypal.com';
-    }
+  function PayPal_DP_Api_PayflowPayment($PayPal, $server, $extra_params) {
+    $api_url = ( $server == 'live' )
+             ? 'https://payflowpro.paypal.com'
+             : 'https://pilot-payflowpro.paypal.com';
 
     $params = [
-      'USER' => $OSCOM_PayPal->getCredentials('DP', ($OSCOM_PayPal->hasCredentials('DP', 'payflow_user') ? 'payflow_user' : 'payflow_vendor')),
-      'VENDOR' => $OSCOM_PayPal->getCredentials('DP', 'payflow_vendor'),
-      'PARTNER' => $OSCOM_PayPal->getCredentials('DP', 'payflow_partner'),
-      'PWD' => $OSCOM_PayPal->getCredentials('DP', 'payflow_password'),
+      'USER' => $PayPal->getCredentials('DP', ($PayPal->hasCredentials('DP', 'payflow_user') ? 'payflow_user' : 'payflow_vendor')),
+      'VENDOR' => $PayPal->getCredentials('DP', 'payflow_vendor'),
+      'PARTNER' => $PayPal->getCredentials('DP', 'payflow_partner'),
+      'PWD' => $PayPal->getCredentials('DP', 'payflow_password'),
       'TENDER' => 'C',
-      'TRXTYPE' => (OSCOM_APP_PAYPAL_DP_TRANSACTION_METHOD == '1') ? 'S' : 'A',
-      'CUSTIP' => tep_get_ip_address(),
-      'BUTTONSOURCE' => $OSCOM_PayPal->getIdentifier(),
+      'TRXTYPE' => (PAYPAL_APP_DP_TRANSACTION_METHOD == '1') ? 'S' : 'A',
+      'CUSTIP' => Request::get_ip(),
+      'BUTTONSOURCE' => $PayPal->getIdentifier(),
     ];
 
     if ( !empty($extra_params) && is_array($extra_params) ) {
@@ -47,7 +45,7 @@
 
     $post_string = substr($post_string, 0, -strlen('&'));
 
-    $response = $OSCOM_PayPal->makeApiCall($api_url, $post_string, $headers);
+    $response = $PayPal->makeApiCall($api_url, $post_string, $headers);
     parse_str($response, $response_array);
 
     return [

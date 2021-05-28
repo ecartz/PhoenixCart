@@ -10,40 +10,35 @@
   Released under the GNU General Public License
 */
 
-  class OSCOM_PayPal_EC_Cfg_zone {
-    var $default = '0';
-    var $title;
-    var $description;
-    var $sort_order = 900;
+  class PayPal_EC_Cfg_zone {
 
-    function __construct() {
-      global $OSCOM_PayPal;
+    public $default = '0';
+    public $title;
+    public $description;
+    public $sort_order = 900;
 
-      $this->title = $OSCOM_PayPal->getDef('cfg_ec_zone_title');
-      $this->description = $OSCOM_PayPal->getDef('cfg_ec_zone_desc');
+    public function __construct() {
+      global $PayPal;
+
+      $this->title = $PayPal->getDef('cfg_ec_zone_title');
+      $this->description = $PayPal->getDef('cfg_ec_zone_desc');
     }
 
-    function getSetField() {
-      global $OSCOM_PayPal;
+    public function getSetField() {
+      global $PayPal;
 
-      $zone_class_array = array(array('id' => '0', 'text' => $OSCOM_PayPal->getDef('cfg_ec_zone_global')));
+      $geo_zones = array_merge([['id' => '0', 'text' => $PayPal->getDef('cfg_ec_zone_global')]],
+        $GLOBALS['db']->fetch_all("SELECT geo_zone_id AS id, geo_zone_name AS `text` FROM geo_zones ORDER BY geo_zone_name"));
 
-      $zone_class_query = tep_db_query("select geo_zone_id, geo_zone_name from geo_zones order by geo_zone_name");
-      while ($zone_class = tep_db_fetch_array($zone_class_query)) {
-        $zone_class_array[] = array('id' => $zone_class['geo_zone_id'],
-                                    'text' => $zone_class['geo_zone_name']);
-      }
+      $input = new Select('zone', $geo_zones, ['id' => 'inputEcZone']);
+      $input->set_selection(PAYPAL_APP_EC_ZONE);
 
-      $input = tep_draw_pull_down_menu('zone', $zone_class_array, OSCOM_APP_PAYPAL_EC_ZONE, 'id="inputEcZone"');
-
-      $result = <<<EOT
+      return <<<"EOHTML"
 <h5>{$this->title}</h5>
 <p>{$this->description}</p>
 
 <div class="mb-3">{$input}</div>
-EOT;
-
-      return $result;
+EOHTML;
     }
+
   }
-?>

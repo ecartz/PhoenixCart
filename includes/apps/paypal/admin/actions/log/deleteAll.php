@@ -10,9 +10,8 @@
   Released under the GNU General Public License
 */
 
-  tep_db_query('delete from oscom_app_paypal_log');
+  $GLOBALS['db']->query('DELETE FROM paypal_app_log');
 
-  $OSCOM_PayPal->addAlert($OSCOM_PayPal->getDef('alert_delete_success'), 'success');
+  $PayPal->addAlert($PayPal->getDef('alert_delete_success'), 'success');
 
-  tep_redirect(tep_href_link('paypal.php', 'action=log'));
-?>
+  Href::redirect(Guarantor::ensure_global('Admin')->link('paypal.php', ['action' => 'log']));
