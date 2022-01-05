@@ -20,7 +20,7 @@
     public $title, $description, $enabled, $_app;
 
     public function __construct() {
-      global $PHP_SELF, $order;
+      global $order;
 
       $this->_app = new PayPal();
       $this->_app->loadLanguageFile('modules/EC/EC.php');
@@ -69,14 +69,14 @@
         $this->update_status();
       }
 
-      if ( (basename($PHP_SELF) == 'shopping_cart.php') ) {
+      if ( (basename(Request::get_page()) == 'shopping_cart.php') ) {
         if ( (PAYPAL_APP_GATEWAY == '1') && (PAYPAL_APP_EC_CHECKOUT_FLOW == '1') ) {
           header('X-UA-Compatible: IE=edge', true);
         }
       }
 
 // When changing the shipping address due to no shipping rates being available, head straight to the checkout confirmation page
-      if ((basename($PHP_SELF) == 'checkout_payment.php') && isset($_SESSION['appPayPalEcRightTurn']) ) {
+      if ((basename(Request::get_page()) == 'checkout_payment.php') && isset($_SESSION['appPayPalEcRightTurn']) ) {
         unset($_SESSION['appPayPalEcRightTurn']);
 
         if ( isset($_SESSION['payment']) && ($_SESSION['payment'] == $this->code) ) {
@@ -84,7 +84,7 @@
         }
       }
 
-      if ( ( $this->enabled === true ) && (basename($PHP_SELF) == 'shopping_cart.php') ) {
+      if ( ( $this->enabled === true ) && (basename(Request::get_page()) == 'shopping_cart.php') ) {
         if ( (PAYPAL_APP_GATEWAY == '1') && (PAYPAL_APP_EC_CHECKOUT_FLOW == '1') ) {
           $GLOBALS['Template']->add_block('<style>#ppECButton { display: inline-block; }</style>', 'header_tags');
         }

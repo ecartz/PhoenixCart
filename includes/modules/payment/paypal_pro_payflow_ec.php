@@ -48,7 +48,7 @@
         }
       }
 
-      if ( ('modules.php' === $GLOBALS['PHP_SELF']) && ('install' === ($_GET['action'] ?? null)) && ('conntest' === ($_GET['subaction'] ?? null)) ) {
+      if ( ('modules.php' === Request::get_page()) && ('install' === ($_GET['action'] ?? null)) && ('conntest' === ($_GET['subaction'] ?? null)) ) {
         echo $this->getTestConnectionResult();
         exit;
       }
@@ -282,13 +282,13 @@
         $server['path'] = '/';
       }
 
-      $request_id = (isset($order->info['total'])) ? md5($_SESSION['cartID'] . session_id() . $GLOBALS['currencies']->format_raw($order->info['total'])) : 'oscom_conn_test';
+      $request_id = (isset($order->info['total'])) ? md5($_SESSION['cartID'] . session_id() . $GLOBALS['currencies']->format_raw($order->info['total'])) : 'phoenix_conn_test';
 
       $headers = [
         'X-VPS-REQUEST-ID: ' . $request_id,
         'X-VPS-CLIENT-TIMEOUT: 45',
-        'X-VPS-VIT-INTEGRATION-PRODUCT: OSCOM',
-        'X-VPS-VIT-INTEGRATION-VERSION: 2.3',
+        'X-VPS-VIT-INTEGRATION-PRODUCT: CEPhoenixCart',
+        'X-VPS-VIT-INTEGRATION-VERSION: ' . Versions::get('Phoenix'),
       ];
 
       $curl = curl_init($server['scheme'] . '://' . $server['host'] . $server['path'] . (isset($server['query']) ? '?' . $server['query'] : ''));
@@ -464,7 +464,7 @@
         'TENDER' => 'P',
         'TRXTYPE' => ((MODULE_PAYMENT_PAYPAL_PRO_PAYFLOW_EC_TRANSACTION_METHOD == 'Sale') ? 'S' : 'A'),
         'ACTION' => 'D',
-        'BUTTONSOURCE' => 'OSCOM23_ECPF',
+        'BUTTONSOURCE' => 'CE_PHOENIX_CART_ECPF',
       ];
 
       if (is_array($parameters) && !empty($parameters)) {
@@ -635,4 +635,5 @@ EOD;
 
       return isset($response_array['RESULT']) ? 1 : -1;
     }
+
   }

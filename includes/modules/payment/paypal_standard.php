@@ -91,7 +91,7 @@
 // Before the stock quantity check is performed in checkout_process.php, detect if the quantity
 // has already been deducted in the IPN to avoid a quantity == 0 redirect
       if ( $this->enabled === true ) {
-        if ('checkout_process.php' === basename($GLOBALS['PHP_SELF'])) {
+        if ('checkout_process.php' === basename(Request::get_page())) {
           if ( isset($_SESSION['payment']) && ($_SESSION['payment'] == $this->code) ) {
             $this->pre_before_check();
           }

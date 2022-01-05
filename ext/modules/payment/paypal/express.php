@@ -905,8 +905,8 @@ EOSQL
         $params['_headers'] = [
           'X-VPS-REQUEST-ID: ' . md5($_SESSION['cartID'] . session_id() . $GLOBALS['currencies']->format_raw($paypal_item_total)),
           'X-VPS-CLIENT-TIMEOUT: 45',
-          'X-VPS-VIT-INTEGRATION-PRODUCT: OSCOM',
-          'X-VPS-VIT-INTEGRATION-VERSION: 2.3',
+          'X-VPS-VIT-INTEGRATION-PRODUCT: CE-PhoenixCart',
+          'X-VPS-VIT-INTEGRATION-VERSION: ' . Versions::get('Phoenix'),
         ];
 
         $response_array = $paypal_express->_app->getApiResult('EC', 'PayflowSetExpressCheckout', $params);

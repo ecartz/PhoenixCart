@@ -59,7 +59,7 @@
         }
       }
 
-      if ( ('modules.php' === $GLOBALS['PHP_SELF']) && ('install' === ($_GET['action'] ?? null)) && ('conntest' === ($_GET['subaction'] ?? null)) ) {
+      if ( ('modules.php' === Request::get_page()) && ('install' === ($_GET['action'] ?? null)) && ('conntest' === ($_GET['subaction'] ?? null)) ) {
         echo $this->getTestConnectionResult();
         exit;
       }
@@ -144,7 +144,7 @@
           'ACCT' => $_POST['cc_number_nh-dns'],
           'EXPDATE' => $_POST['cc_expires_month'] . $_POST['cc_expires_year'],
           'CVV2' => $_POST['cc_cvc_nh-dns'],
-          'BUTTONSOURCE' => 'OSCOM23_DPPF',
+          'BUTTONSOURCE' => 'CEPhoenixCart_DPPF',
         ];
 
         if (is_numeric($_SESSION['sendto']) && ($_SESSION['sendto'] > 0)) {
@@ -392,13 +392,13 @@
         $server['path'] = '/';
       }
 
-      $request_id = (isset($order->info['total'])) ? md5($_SESSION['cartID'] . session_id() . $GLOBALS['currencies']->format_raw($order->info['total'])) : 'oscom_conn_test';
+      $request_id = (isset($order->info['total'])) ? md5($_SESSION['cartID'] . session_id() . $GLOBALS['currencies']->format_raw($order->info['total'])) : 'phoenix_conn_test';
 
       $headers = [
         'X-VPS-REQUEST-ID: ' . $request_id,
         'X-VPS-CLIENT-TIMEOUT: 45',
-        'X-VPS-VIT-INTEGRATION-PRODUCT: OSCOM',
-        'X-VPS-VIT-INTEGRATION-VERSION: 2.3',
+        'X-VPS-VIT-INTEGRATION-PRODUCT: CEPhoenixCart',
+        'X-VPS-VIT-INTEGRATION-VERSION: ' . Versions::get('Phoenix'),
       ];
 
       $curl = curl_init($server['scheme'] . '://' . $server['host'] . $server['path'] . (isset($server['query']) ? '?' . $server['query'] : ''));
